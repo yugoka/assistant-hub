@@ -64,7 +64,7 @@ export default function MainLayout({
           </Sheet>
         </div>
       </header>
-      <div className="flex-1">
+      <div className="flex-1 flex shrink-1 grow-1">
         <div className="hidden w-64 shrink-0 border-r bg-gray-100 dark:border-gray-800 dark:bg-gray-900 md:block">
           <div className="flex h-full flex-col justify-between py-6">
             <nav className="space-y-1 px-4">
