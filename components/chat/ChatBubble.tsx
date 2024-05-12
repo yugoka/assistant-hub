@@ -1,34 +1,38 @@
-import React, { use } from "react";
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Props = {
-  username: string;
-  variant: "user" | "ai";
+  username?: string;
+  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
+  timestamp?: Date;
   content: string;
-  timestamp: Date;
 };
 
-export default async function ChatBubble({
-  variant,
-  content,
+export default function ChatBubble({
+  role,
   timestamp,
   username,
+  content,
 }: Props) {
   return (
-    <div className={`flex ${variant === "user" && "justify-end"}`}>
+    <div className={`flex ${role === "user" && "justify-end"}`}>
       <div className="max-w-[80%] space-y-1">
         <div
           className={`${
-            variant === "user" && "text-right"
+            role === "user" && "text-right"
           } text-xs text-gray-500 dark:text-gray-400`}
         >
-          {username}
+          {username || role}
         </div>
         <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
-          {content}
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </div>
-        <div className="text-right text-xs text-gray-500 dark:text-gray-400">
-          {formatDate(timestamp)}
-        </div>
+        {timestamp && (
+          <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+            {formatDate(timestamp)}
+          </div>
+        )}
       </div>
     </div>
   );
