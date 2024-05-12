@@ -1,8 +1,6 @@
-import DeployButton from "@/components/DeployButton";
-import AuthButton from "@/components/AuthButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { createClient } from "@/utils/supabase/server";
-import FetchDataSteps from "@/components/tutorial/FetchDataSteps";
-import Header from "@/components/Header";
 import { redirect } from "next/navigation";
 
 export default async function ProtectedPage() {
@@ -17,41 +15,114 @@ export default async function ProtectedPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      <div className="w-full">
-        <div className="py-6 font-bold bg-purple-950 text-center">
-          This is a protected page that you can only see as an authenticated
-          user
-        </div>
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-            <DeployButton />
-            <AuthButton />
+    <div className="flex h-screen max-h-screen flex-col">
+      <header className="flex items-center justify-between border-b bg-gray-100 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+        <div className="text-lg font-medium">Chat with Jane</div>
+        <Button className="rounded-full" size="icon" variant="ghost">
+          <XIcon className="h-5 w-5" />
+          <span className="sr-only">Close chat</span>
+        </Button>
+      </header>
+      <div className="flex-1 overflow-auto p-4">
+        <div className="grid gap-4">
+          <div className="flex justify-end">
+            <div className="max-w-[80%] space-y-1">
+              <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
+                Hey there! How can I help you today?
+              </div>
+              <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                3:45 PM
+              </div>
+            </div>
           </div>
-        </nav>
+          <div className="flex">
+            <div className="max-w-[80%] space-y-1">
+              <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
+                Hi! I'm looking to place an order for your new product. Can you
+                please provide more details?
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                3:47 PM
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <div className="max-w-[80%] space-y-1">
+              <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
+                Sure, I'd be happy to help. What kind of product are you
+                interested in?
+              </div>
+              <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                3:49 PM
+              </div>
+            </div>
+          </div>
+          <div className="flex">
+            <div className="max-w-[80%] space-y-1">
+              <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
+                I'm interested in your new line of eco-friendly office supplies.
+                Can you tell me more about the pricing and availability?
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                3:51 PM
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div className="animate-in flex-1 flex flex-col gap-20 opacity-0 max-w-4xl px-3">
-        <Header />
-        <main className="flex-1 flex flex-col gap-6">
-          <h2 className="font-bold text-4xl mb-4">Next steps</h2>
-          <FetchDataSteps />
-        </main>
+      <div className="border-t bg-gray-100 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
+        <div className="flex items-center gap-2">
+          <Input
+            className="flex-1"
+            placeholder="Type your message..."
+            type="text"
+          />
+          <Button className="rounded-full" size="icon" variant="ghost">
+            <PaperclipIcon className="h-5 w-5" />
+            <span className="sr-only">Attach file</span>
+          </Button>
+          <Button>Send</Button>
+        </div>
       </div>
-
-      <footer className="w-full border-t border-t-foreground/10 p-8 flex justify-center text-center text-xs">
-        <p>
-          Powered by{" "}
-          <a
-            href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-            target="_blank"
-            className="font-bold hover:underline"
-            rel="noreferrer"
-          >
-            Supabase
-          </a>
-        </p>
-      </footer>
     </div>
+  );
+}
+
+function PaperclipIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+function XIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
   );
 }
