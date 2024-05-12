@@ -8,7 +8,7 @@ import Link from "next/link";
 export function MainLayoutHeader() {
   return (
     <header className="bg-gray-100 dark:bg-gray-900 border-b dark:border-gray-800 md:hidden shrink-0 grow-0">
-      <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+      <div className="flex items-center justify-between h-12 px-4 sm:px-6">
         <Sheet>
           <SheetTrigger asChild>
             <Button size="icon" variant="link">
