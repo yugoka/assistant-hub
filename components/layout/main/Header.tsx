@@ -2,7 +2,7 @@ import { BrandIcon } from "@/components/common/BrandIcon";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MenuIcon } from "lucide-react";
-import NavMenu from "./NavMenu";
+import NavMenu from "./NavMenu/NavMenu";
 import Link from "next/link";
 
 export function MainLayoutHeader() {

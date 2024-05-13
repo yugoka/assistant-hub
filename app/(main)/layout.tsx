@@ -1,16 +1,23 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { SheetTrigger, SheetContent, Sheet } from "@/components/ui/sheet";
-import NavMenu from "@/components/layout/main/NavMenu";
-import { MenuIcon } from "lucide-react";
-import { BrandIcon } from "@/components/common/BrandIcon";
+import NavMenu from "@/components/layout/main/NavMenu/NavMenu";
 import { MainLayoutHeader } from "@/components/layout/main/Header";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
 
-export default function MainLayout({
+export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect("/login");
+  }
+
   return (
     <div className="flex flex-col h-screen w-full">
       <MainLayoutHeader />
