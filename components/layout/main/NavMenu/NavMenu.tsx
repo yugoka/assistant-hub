@@ -29,12 +29,16 @@ export default function NavMenu() {
   const pathName = usePathname();
 
   // 非効率なループを回しているが項目数が小規模なので許容
-  const currentChatMode =
+  const getCurrentMenuMode = () =>
     navMenuModes.find((mode) => pathName.startsWith(mode.pathname)) ||
     navMenuChatMode;
 
   const [currentNavMenuMode, setCurrentNavMenuMode] =
-    React.useState<NavMenuMode>(currentChatMode);
+    React.useState<NavMenuMode>(getCurrentMenuMode());
+
+  React.useEffect(() => {
+    setCurrentNavMenuMode(getCurrentMenuMode());
+  }, [pathName]);
 
   return (
     <div>
@@ -47,8 +51,8 @@ export default function NavMenu() {
         </Link>
         <div className="flex justify-center">
           <NavMenuDropDown
-            setCurrentNavMenuMode={setCurrentNavMenuMode}
             currentNavMenuMode={currentNavMenuMode}
+            setCurrentNavMenuMode={setCurrentNavMenuMode}
             navMenuModes={navMenuModes}
           />
         </div>
