@@ -1,10 +1,18 @@
 "use client";
 import { BrandIcon } from "@/components/common/BrandIcon";
-import { HomeIcon, MessageSquareTextIcon, WandSparkles } from "lucide-react";
+import {
+  HomeIcon,
+  MessageSquareTextIcon,
+  PlusIcon,
+  WandSparkles,
+} from "lucide-react";
 import Link from "next/link";
 import NavMenuDropDown from "./NavMenuDropDown";
 import React from "react";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import ThreadList from "./Chat/ThreadList";
+import ChatNavigation from "./Chat/ChatNavigation";
 
 export type NavMenuMode = {
   name: string;
@@ -59,13 +67,7 @@ export default function NavMenu() {
       </div>
 
       <nav className="space-y-1 px-4 py-3">
-        <Link
-          className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
-          href="#"
-        >
-          <HomeIcon className="mr-3 h-5 w-5" />
-          Home
-        </Link>
+        {currentNavMenuMode === navMenuChatMode ? <ChatNavigation /> : <></>}
       </nav>
     </div>
   );

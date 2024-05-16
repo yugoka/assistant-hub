@@ -15,21 +15,25 @@ export default function ChatScreen() {
 
   // 自動スクロール
   React.useEffect(() => {
-    if (scrollContainer.current && endOfMessages.current) {
-      const { scrollTop, clientHeight, scrollHeight } = scrollContainer.current;
-
-      // ここの高さはハードコーディングなので注意
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 40;
-
-      if (isAtBottom) {
-        scrollToBottom();
-      }
-    }
+    followBottom(80);
   }, [messages]);
 
   const scrollToBottom = () => {
     if (endOfMessages.current) {
       endOfMessages.current.scrollIntoView({ behavior: "auto" });
+    }
+  };
+
+  const followBottom = (offset: number) => {
+    if (scrollContainer.current && endOfMessages.current) {
+      const { scrollTop, clientHeight, scrollHeight } = scrollContainer.current;
+
+      // ここの高さはハードコーディングなので注意
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - offset;
+
+      if (isAtBottom) {
+        scrollToBottom();
+      }
     }
   };
 
