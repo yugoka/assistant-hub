@@ -1,12 +1,14 @@
-import { runResnponderAgent } from "@/app/assistant/agents/responderAgent";
+import { runResponderAgent } from "@/app/assistant/agents/responderAgent";
 import { OpenAIStream, StreamingTextResponse } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 
+//============
+// useChat()用API
+//============
 export async function POST(request: NextRequest) {
   try {
-    // request bodyはそのまま渡す
     const { messages } = await request.json();
-    const response = await runResnponderAgent(messages);
+    const response = await runResponderAgent(messages);
 
     const clientStream = OpenAIStream(response);
     return new StreamingTextResponse(clientStream);
