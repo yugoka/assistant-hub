@@ -16,29 +16,48 @@ export default function ThreadList({ query }: Props) {
   const [threads, setThreads] = React.useState<Thread[]>([]);
 
   const fetchThreads = async () => {
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      let queryBuilder = supabase
-        .from("Threads")
-        .select()
-        .eq("user_id", user?.id);
+    let queryBuilder = supabase
+      .from("Threads")
+      .select()
+      .eq("user_id", user?.id);
 
-      if (query.nameLike) {
-        queryBuilder = queryBuilder.like("name", query.nameLike);
-      }
+    if (query.nameLike) {
+      queryBuilder = queryBuilder.like("name", query.nameLike);
+    }
 
-      const result = await queryBuilder;
-      const threads = result.data;
+    const result = await queryBuilder;
+    const threads = result.data;
 
-      setThreads(threads || []);
-    })();
+    setThreads(threads || []);
+
+    // 変更を購読する
+    supabase
+      .channel("thread-list")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "Threads",
+          filter: `user_id=eq.${user?.id}`,
+        },
+        (payload) => {
+          console.log("payload:", payload);
+          fetchThreads();
+        }
+      )
+      .subscribe();
   };
 
   React.useEffect(() => {
     fetchThreads();
+    return () => {
+      supabase.channel("thread-list").unsubscribe();
+    };
   }, [query]);
 
   return (

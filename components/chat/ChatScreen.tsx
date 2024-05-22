@@ -7,7 +7,7 @@ import React from "react";
 
 export default function ChatScreen() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/assistant",
+    api: "/api/web-chat/",
   });
 
   const endOfMessages = React.useRef<HTMLDivElement>(null);
