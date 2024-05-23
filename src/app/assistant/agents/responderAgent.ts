@@ -15,7 +15,7 @@ const mockTools = [
     type: "function",
     function: {
       name: "get_current_weather",
-      description: "Get the current weather in a given location",
+      description: "Get the current weather in a given location.",
       parameters: {
         type: "object",
         properties: {
@@ -43,7 +43,7 @@ const mockTools = [
           },
           unit: { type: "string", enum: ["celsius", "fahrenheit"] },
         },
-        required: ["teperature"],
+        required: ["temperature"],
       },
     },
   },
@@ -72,20 +72,20 @@ export const fetchResponderAgentResponse = async (
   return response.toReadableStream();
 };
 
+// 再帰的にResponderAgentを呼び出してユーザーの入力を解決する
 export const runResponderAgent = async (
   { messages }: AssistantAPIParam,
   steps = 1
 ) => {
   let currentMessages = messages;
 
-  const readableStream = new ReadableStream({
+  const readableStream = new ReadableStream<string>({
     async start(controller) {
       while (steps <= MAX_TOOLCALL_STEPS) {
         console.log("=== Running Responder Agent ===");
         console.log("Steps:", steps);
         console.log("Messages:", currentMessages);
 
-        // ここにデータが溜まっていく
         const newChunkObject = {} as ChatCompletionChunk;
 
         const responseStream = await fetchResponderAgentResponse(
@@ -95,32 +95,30 @@ export const runResponderAgent = async (
         const reader = responseStream.getReader();
         const decoder = new TextDecoder();
 
-        // 各メッセージ内のデータをストリーミング
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
           const parsedChunk = JSON.parse(chunk) as ChatCompletionChunk;
-          // データを貯めていく
           mergeResponseObjects(newChunkObject, parsedChunk);
 
-          console.log(JSON.stringify(parsedChunk.choices[0].delta));
-          controller.enqueue(JSON.stringify(parsedChunk.choices[0].delta)); // クライアントに送信
+          controller.enqueue(
+            JSON.stringify(parsedChunk.choices[0].delta) + "\n"
+          );
         }
 
         const newMessage = newChunkObject.choices[0]
           .delta as ChatCompletionMessage;
+
         const hasToolCall =
           newChunkObject.choices[0].finish_reason === "tool_calls";
 
-        // ToolCallがないならここでレスポンスを打ち止めにする
         if (!hasToolCall) {
           currentMessages = [...currentMessages, newMessage];
           break;
         }
 
-        // ツールを実行する
         const toolCalls = newMessage.tool_calls || [];
         const toolCallResults = await executeTools(toolCalls);
 
@@ -136,22 +134,23 @@ export const runResponderAgent = async (
   return readableStream;
 };
 
-let i = 0;
-const messages = [
-  "藤沢市の気温は１５℃です",
-  "クーラーの設定温度を15℃にしました",
+const toolMessages = [
+  "藤沢市は晴れで、気温は23℃です",
+  "クーラーの設定温度を23℃にしました",
   "実行に失敗しました",
 ];
 const executeTools = async (
   toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
 ): Promise<ChatCompletionToolMessageParam[]> => {
   console.log("tool Calls:", toolCalls);
+  let i = 0;
+
   return toolCalls.map((toolCall) => {
     i += 1;
     return {
       role: "tool",
       tool_call_id: toolCall.id || "",
-      content: messages[i - 1],
+      content: toolMessages[Math.min(i - 1, toolMessages.length - 1)],
     } as ChatCompletionToolMessageParam;
   });
 };

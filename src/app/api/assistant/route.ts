@@ -1,6 +1,5 @@
 import { runResponderAgent } from "@/app/assistant/agents/responderAgent";
 import { AssistantAPIParam } from "@/types/api/Assistant";
-import { StreamingTextResponse } from "ai";
 
 //============
 // 外部用API
