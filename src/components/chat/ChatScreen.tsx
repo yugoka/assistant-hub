@@ -37,6 +37,8 @@ export default function ChatScreen() {
     }
   };
 
+  console.log(messages[messages.length - 1]);
+
   return (
     <div className="flex h-full flex-col w-full">
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
