@@ -105,7 +105,8 @@ export const runResponderAgent = async (
           // データを貯めていく
           mergeResponseObjects(newChunkObject, parsedChunk);
 
-          controller.enqueue(chunk); // クライアントに送信
+          console.log(JSON.stringify(parsedChunk.choices[0].delta));
+          controller.enqueue(JSON.stringify(parsedChunk.choices[0].delta)); // クライアントに送信
         }
 
         const newMessage = newChunkObject.choices[0]

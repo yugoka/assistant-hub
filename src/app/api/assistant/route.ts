@@ -8,10 +8,23 @@ import { StreamingTextResponse } from "ai";
 export const runtime = "edge";
 
 export async function POST(req: Request) {
-  const params: AssistantAPIParam = await req.json();
+  try {
+    const params: AssistantAPIParam = await req.json();
+    const responseStream = await runResponderAgent(params);
 
-  const response = await runResponderAgent(params);
-
-  // クライアントにストリームを返す
-  return new StreamingTextResponse(response);
+    // ストリームをそのままレスポンスとして返す
+    return new Response(responseStream, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("Error handling request:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
 }
