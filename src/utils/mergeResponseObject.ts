@@ -1,61 +1,103 @@
-const customizer = (objValue: any, srcValue: any, key: string) => {
-  if (
-    // contentとargumentsだけ足し合わせる
-    (key === "content" || key === "arguments") &&
-    typeof objValue === "string" &&
-    typeof srcValue === "string"
-  ) {
-    return objValue + srcValue;
-  }
-  return undefined; // 他のキーの場合はundefinedを返す
-};
+// プリミティブ型の定義
+type Primitive = string | number | boolean | null | undefined;
 
-export const mergeResponseObjects = (obj1: any, obj2: any) => {
+// JSONオブジェクトと配列の型定義
+type JsonObject = { [key: string]: any };
+type JsonArray = any[];
+
+/**
+ * 2つのプリミティブ値をマージします。
+ * 特定のキーに対しては特別な処理を行います。
+ *
+ * @param value1 - 最初のプリミティブ値
+ * @param value2 - 2番目のプリミティブ値
+ * @param key - マージするキー
+ * @returns マージされたプリミティブ値
+ */
+function mergePrimitives(
+  value1: Primitive,
+  value2: Primitive,
+  key: string
+): Primitive {
+  if (key === "content" || key === "arguments") {
+    console.log(value2);
+    if (typeof value1 === "string" && typeof value2 === "string") {
+      return value1 + value2;
+    }
+  }
+  return value2;
+}
+
+/**
+ * 2つの配列をマージします。
+ * 特定のキーに対しては特別な処理を行います。
+ *
+ * @param arr1 - 最初の配列
+ * @param arr2 - 2番目の配列
+ * @param key - マージするキー
+ * @returns マージされた配列
+ */
+function mergeArrays(arr1: JsonArray, arr2: JsonArray, key: string): JsonArray {
+  if (key === "tool_calls") {
+    const map = new Map<number, JsonObject>();
+
+    // arr1の要素をマップに追加
+    arr1.forEach((item: JsonObject) => map.set(item.index, item));
+
+    // arr2の要素をマップに追加またはマージ
+    arr2.forEach((item: JsonObject) => {
+      if (map.has(item.index)) {
+        map.set(item.index, mergeResponseObjects(map.get(item.index)!, item));
+      } else {
+        map.set(item.index, item);
+      }
+    });
+
+    console.log("NewArr:", Array.from(map.values()));
+    return Array.from(map.values());
+  } else {
+    const result: JsonArray = [];
+    const maxLength = Math.max(arr1.length, arr2.length);
+
+    // 配列の要素をマージ
+    for (let i = 0; i < maxLength; i++) {
+      if (i < arr1.length && i < arr2.length) {
+        result.push(mergeResponseObjects(arr1[i], arr2[i]));
+      } else if (i < arr1.length) {
+        result.push(arr1[i]);
+      } else {
+        result.push(arr2[i]);
+      }
+    }
+
+    return result;
+  }
+}
+
+/**
+ * 2つのJSONオブジェクトをマージします。非破壊的な関数です。
+ *
+ * @param obj1 - 最初のオブジェクト
+ * @param obj2 - 2番目のオブジェクト
+ * @returns マージされたオブジェクト
+ */
+export function mergeResponseObjects(
+  obj1: JsonObject,
+  obj2: JsonObject
+): JsonObject {
+  const result: JsonObject = { ...obj1 };
+
   for (const key in obj2) {
     if (obj2.hasOwnProperty(key)) {
-      const objValue = obj1[key];
-      const srcValue = obj2[key];
-      const customizedValue = customizer(objValue, srcValue, key);
-
-      // customizerが値を返した場合、その値を使用
-      if (customizedValue !== undefined) {
-        obj1[key] = customizedValue;
+      if (Array.isArray(obj2[key])) {
+        result[key] = mergeArrays(result[key] || [], obj2[key], key);
+      } else if (typeof obj2[key] === "object" && obj2[key] !== null) {
+        result[key] = mergeResponseObjects(result[key] || {}, obj2[key]);
       } else {
-        // customizerが値を返さなかった場合、通常のマージを行う
-        if (
-          typeof objValue === "object" &&
-          typeof srcValue === "object" &&
-          objValue !== null &&
-          srcValue !== null
-        ) {
-          if (Array.isArray(objValue) && Array.isArray(srcValue)) {
-            // 配列の場合
-            for (let i = 0; i < srcValue.length; i++) {
-              if (i < objValue.length) {
-                if (
-                  typeof objValue[i] === "object" &&
-                  typeof srcValue[i] === "object" &&
-                  objValue[i] !== null &&
-                  srcValue[i] !== null
-                ) {
-                  mergeResponseObjects(objValue[i], srcValue[i]);
-                } else {
-                  objValue[i] = srcValue[i];
-                }
-              } else {
-                objValue.push(srcValue[i]);
-              }
-            }
-          } else {
-            // オブジェクトの場合
-            mergeResponseObjects(objValue, srcValue);
-          }
-        } else {
-          obj1[key] = srcValue;
-        }
+        result[key] = mergePrimitives(result[key], obj2[key], key);
       }
     }
   }
 
-  return obj1;
-};
+  return result;
+}

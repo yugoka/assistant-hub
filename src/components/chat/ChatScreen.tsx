@@ -1,13 +1,13 @@
 "use client";
-import ChatBubble from "@/components/chat/ChatBubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useChat } from "ai/react";
+import { useChat } from "@/hooks/useChat";
 import React from "react";
+import ChatLog from "./ChatLog";
 
 export default function ChatScreen() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/web-chat/",
+    api: "/api/assistant/",
   });
 
   const endOfMessages = React.useRef<HTMLDivElement>(null);
@@ -37,18 +37,12 @@ export default function ChatScreen() {
     }
   };
 
-  console.log(messages[messages.length - 1]);
-
   return (
     <div className="flex h-full flex-col w-full">
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
         <div className="grid gap-4 max-w-2xl mx-auto">
           {messages.map((message) => (
-            <ChatBubble
-              role={message.role}
-              key={message.id}
-              content={message.content}
-            />
+            <ChatLog key={message.id} message={message} />
           ))}
         </div>
         <div ref={endOfMessages} className="h-1" />

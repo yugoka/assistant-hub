@@ -1,40 +1,39 @@
+import { Message } from "@/types/Message";
+import { parseMessageContent } from "@/utils/message";
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 type Props = {
+  message: Message;
   username?: string;
-  role: "system" | "user" | "assistant" | "function" | "data" | "tool";
-  timestamp?: Date;
-  content: string;
 };
 
-export default function ChatBubble({
-  role,
-  timestamp,
-  username,
-  content,
-}: Props) {
+export default function ChatLogBubble({ message, username }: Props) {
   return (
-    <div className={`flex ${role === "user" && "justify-end"}`}>
-      <div className="max-w-[80%] space-y-1">
-        <div
-          className={`${
-            role === "user" && "text-right"
-          } text-xs text-gray-500 dark:text-gray-400`}
-        >
-          {username || role}
-        </div>
-        <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-        </div>
-        {timestamp && (
-          <div className="text-right text-xs text-gray-500 dark:text-gray-400">
-            {formatDate(timestamp)}
+    <>
+      <div className={`flex ${message.role === "user" && "justify-end"}`}>
+        <div className="max-w-[80%] space-y-1">
+          <div
+            className={`${
+              message.role === "user" && "text-right"
+            } text-xs text-gray-500 dark:text-gray-400`}
+          >
+            {username || message.role}
           </div>
-        )}
+          <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {parseMessageContent(message.content)}
+            </ReactMarkdown>
+          </div>
+          {message.created_at && (
+            <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+              {formatDate(message.created_at)}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

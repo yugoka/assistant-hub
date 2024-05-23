@@ -1,7 +1,6 @@
 import { AssistantAPIParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
 import {
-  ChatCompletionAssistantMessageParam,
   ChatCompletionChunk,
   ChatCompletionMessage,
   ChatCompletionMessageParam,
@@ -9,6 +8,8 @@ import {
 } from "openai/resources";
 import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
+import { v4 as uuidv4 } from "uuid";
+import { Message } from "@/types/Message";
 
 const mockTools = [
   {
@@ -86,7 +87,7 @@ export const runResponderAgent = async (
         console.log("Steps:", steps);
         console.log("Messages:", currentMessages);
 
-        const newChunkObject = {} as ChatCompletionChunk;
+        let newChunkObject = {} as ChatCompletionChunk;
 
         const responseStream = await fetchResponderAgentResponse(
           currentMessages,
@@ -95,16 +96,26 @@ export const runResponderAgent = async (
         const reader = responseStream.getReader();
         const decoder = new TextDecoder();
 
+        // 現在の返答のUUID
+        const currentMessageUUID = uuidv4();
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
           const parsedChunk = JSON.parse(chunk) as ChatCompletionChunk;
-          mergeResponseObjects(newChunkObject, parsedChunk);
+          newChunkObject = mergeResponseObjects(
+            newChunkObject,
+            parsedChunk
+          ) as ChatCompletionChunk;
 
           controller.enqueue(
-            JSON.stringify(parsedChunk.choices[0].delta) + "\n"
+            JSON.stringify({
+              // 各メッセージオブジェクトはIDで識別する
+              id: currentMessageUUID,
+              ...parsedChunk.choices[0].delta,
+            }) + "\n"
           );
         }
 
@@ -122,6 +133,19 @@ export const runResponderAgent = async (
         const toolCalls = newMessage.tool_calls || [];
         const toolCallResults = await executeTools(toolCalls);
 
+        controller.enqueue(
+          toolCallResults
+            .map(
+              (toolCallResult) =>
+                JSON.stringify({
+                  // 各toolCallResultは別メッセージなので、個別のUUIDを持つ
+                  id: uuidv4(),
+                  ...toolCallResult,
+                }) + "\n"
+            )
+            .join("")
+        );
+
         currentMessages = [...currentMessages, newMessage, ...toolCallResults];
         steps += 1;
       }
@@ -136,6 +160,7 @@ export const runResponderAgent = async (
 
 const toolMessages = [
   "藤沢市は晴れで、気温は23℃です",
+  "平塚市市は晴れで、気温は17℃です",
   "クーラーの設定温度を23℃にしました",
   "実行に失敗しました",
 ];

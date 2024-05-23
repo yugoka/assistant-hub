@@ -1,5 +1,5 @@
 "use client";
-import { BrandIcon } from "@/components/common/BrandIcon";
+import { BrandIcon } from "@/components/common/icons/BrandIcon";
 import {
   HomeIcon,
   MessageSquareTextIcon,
@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import ThreadList from "./Chat/ThreadList";
 import ChatNavigation from "./Chat/ChatNavigation";
+import { ToolIcon } from "@/components/common/icons/ToolIcon";
 
 export type NavMenuMode = {
   name: string;
@@ -27,7 +28,7 @@ const navMenuChatMode = {
 };
 const navMenuToolsMode = {
   name: "Tools",
-  icon: <WandSparkles />,
+  icon: <ToolIcon />,
   pathname: "/tools",
 };
 
