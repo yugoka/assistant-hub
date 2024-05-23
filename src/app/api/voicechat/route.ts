@@ -23,9 +23,10 @@ export async function POST(req: Request) {
 
 async function modifyStreamForWebChat(
   stream: ReadableStream<string>
-): Promise<ReadableStream<string>> {
+): Promise<ReadableStream<Uint8Array>> {
   const reader = stream.getReader();
-  const modifiedStream = new ReadableStream<string>({
+  const encoder = new TextEncoder();
+  const modifiedStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       while (true) {
         const { done, value } = await reader.read();
@@ -33,7 +34,9 @@ async function modifyStreamForWebChat(
         const modifiedValue = modifyChunkForWebChat(value);
 
         if (modifiedValue) {
-          controller.enqueue(modifiedValue);
+          // 文字列をエンコードしてUint8Arrayに変換
+          const encodedValue = encoder.encode(modifiedValue);
+          controller.enqueue(encodedValue);
         }
       }
       controller.close();
