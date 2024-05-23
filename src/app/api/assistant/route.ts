@@ -10,9 +10,10 @@ export async function POST(req: Request) {
   try {
     const params: AssistantAPIParam = await req.json();
     const responseStream = await runResponderAgent(params);
+    const modifiedStream = await modifyStreamForWebChat(responseStream);
 
     // ストリームをそのままレスポンスとして返す
-    return new Response(responseStream, {
+    return new Response(modifiedStream, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -26,4 +27,34 @@ export async function POST(req: Request) {
       },
     });
   }
+}
+
+async function modifyStreamForWebChat(
+  stream: ReadableStream<string>
+): Promise<ReadableStream<Uint8Array>> {
+  const reader = stream.getReader();
+  const encoder = new TextEncoder();
+  const modifiedStream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const modifiedValue = modifyChunkForWebChat(value);
+
+        if (modifiedValue) {
+          // 文字列をエンコードしてUint8Arrayに変換
+          const encodedValue = encoder.encode(modifiedValue);
+          controller.enqueue(encodedValue);
+        }
+      }
+      controller.close();
+    },
+  });
+
+  return modifiedStream;
+}
+
+// ここでチャンクを編集。そのまま返してもok
+function modifyChunkForWebChat(chunk: string): string {
+  return chunk;
 }
