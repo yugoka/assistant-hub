@@ -20,7 +20,6 @@ function mergePrimitives(
   key: string
 ): Primitive {
   if (key === "content" || key === "arguments") {
-    console.log(value2);
     if (typeof value1 === "string" && typeof value2 === "string") {
       return value1 + value2;
     }
@@ -53,7 +52,6 @@ function mergeArrays(arr1: JsonArray, arr2: JsonArray, key: string): JsonArray {
       }
     });
 
-    console.log("NewArr:", Array.from(map.values()));
     return Array.from(map.values());
   } else {
     const result: JsonArray = [];
