@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChat } from "@/hooks/useChat";
 import React from "react";
-import ChatLog from "./ChatLog";
+import ChatLogs from "./ChatLogs";
 
 export default function ChatScreen() {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
@@ -41,9 +41,7 @@ export default function ChatScreen() {
     <div className="flex h-full flex-col w-full">
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
         <div className="grid gap-4 max-w-2xl mx-auto">
-          {messages.map((message) => (
-            <ChatLog key={message.id} message={message} />
-          ))}
+          <ChatLogs messages={messages} />
         </div>
         <div ref={endOfMessages} className="h-1" />
       </div>
