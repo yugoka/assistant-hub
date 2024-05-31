@@ -1,7 +1,9 @@
-import { ChatCompletionMessageParam } from "openai/resources";
+import { Message } from "../Message";
 
 export type AssistantAPIParam = {
   threadID: string;
-  messages: ChatCompletionMessageParam[];
+  messages: Message[];
   save?: boolean;
+  page?: number;
+  pageSize?: number;
 };

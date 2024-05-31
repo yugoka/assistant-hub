@@ -1,3 +1,4 @@
+import { threadId } from "worker_threads";
 import { Message, MessageChunk } from "@/types/Message";
 import { AssistantAPIParam } from "@/types/api/Assistant";
 import { generateUUIDForMessage, parseMessageContent } from "@/utils/message";
@@ -25,9 +26,13 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
 
   // 読み込む
   React.useEffect(() => {
-    if (threadID != defaultThreadID) {
-      setThreadID(defaultThreadID);
-    }
+    (async () => {
+      if (defaultThreadID && threadID !== defaultThreadID) {
+        setThreadID(defaultThreadID);
+        const messages = await getMessages(defaultThreadID);
+        setMessages(messages);
+      }
+    })();
   }, [defaultThreadID]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,6 +166,41 @@ const getMessagesStream = async (
       }
     },
   };
+};
+
+// メッセージを取得する
+const getMessages = async (
+  threadID: string,
+  page?: number,
+  pageSize?: number
+): Promise<Message[]> => {
+  const params = new URLSearchParams();
+  params.append("thread_id", threadID);
+  if (page !== undefined) {
+    params.append("page", `${page}`);
+  }
+  if (pageSize !== undefined) {
+    params.append("page_size", `${pageSize}`);
+  }
+  const url = `/api/messages?${params.toString()}`;
+
+  try {
+    // fetchリクエストを送信
+    const response = await fetch(url, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("fetched", data.length, "messages");
+    return data;
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    throw error;
+  }
 };
 
 // メッセージからスレッドを作成するユーティリティ関数

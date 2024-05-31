@@ -1,14 +1,28 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
+import { getMessagesByThreadID } from "@/services/messages";
 import { AssistantAPIParam } from "@/types/api/Assistant";
 import { ChatCompletionMessage } from "openai/resources";
 
 //============
-// 内部用API
+// ボイスチャット用API
+// 余計な情報を廃してアシスタントの発言だけを返します
 //============
 export const runtime = "edge";
 
 export async function POST(req: Request) {
   const params: AssistantAPIParam = await req.json();
+  if (!params.threadID) {
+    throw new Error("Thread ID not specified");
+  }
+  // メッセージが指定されていない場合はDBから持ってくる
+  if (!params.messages) {
+    params.messages = await getMessagesByThreadID({
+      threadID: params.threadID,
+      page: params.page,
+      pageSize: params.pageSize,
+    });
+  }
+
   const responseStream = await runResponderAgent(params);
   const modifiedStream = await modifyStreamForVoiceChat(responseStream);
 

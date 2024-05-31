@@ -2,16 +2,13 @@ import { AssistantAPIParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
 import {
   ChatCompletionChunk,
-  ChatCompletionMessage,
   ChatCompletionMessageParam,
-  ChatCompletionToolMessageParam,
 } from "openai/resources";
 import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
-import { threadId } from "worker_threads";
 
 const mockTools = [
   {
@@ -80,7 +77,18 @@ export const fetchResponderAgentResponse = async (
 export const runResponderAgent = async ({
   messages,
   threadID,
+  save = true,
 }: AssistantAPIParam) => {
+  if (!messages.length) {
+    throw new Error("Messages array is empty");
+  }
+  // ユーザーからのメッセージを保存する
+  const lastMessage = messages[messages.length - 1];
+
+  if (save) {
+    saveMessage(lastMessage);
+  }
+
   let steps = 1;
   let currentMessages = messages;
 
@@ -123,6 +131,7 @@ export const runResponderAgent = async ({
           );
         }
 
+        // 完成したメッセージ
         const newMessage = {
           ...newChunkObject.choices[0].delta,
           id: currentMessageUUID,
@@ -134,6 +143,10 @@ export const runResponderAgent = async ({
 
         if (!hasToolCall) {
           currentMessages = [...currentMessages, newMessage];
+          // エージェントの動きをブロックしないためにawaitしない
+          if (save) {
+            saveMessage(newMessage);
+          }
           break;
         }
 
@@ -154,11 +167,20 @@ export const runResponderAgent = async ({
             .join("")
         );
 
+        // toolの実行までが終わったら一連のメッセージを保存する
+        // → 実行結果のないtool_callsをログに含めるとエラーが出るため。
+        // エージェントの動きをブロックしないためにawaitしない
+        if (save) {
+          saveMessage(newMessage);
+          for (const toolMessage of toolCallResults) {
+            saveMessage(toolMessage);
+          }
+        }
+
         currentMessages = [...currentMessages, newMessage, ...toolCallResults];
         steps += 1;
       }
 
-      console.log("Final Messages:", currentMessages);
       controller.close();
     },
   });
@@ -192,13 +214,15 @@ const executeTools = async (
       thread_id: threadID,
     };
   });
+
   return result;
 };
 
 // エージェントの動きをブロックしないために、awaitせずに使う場合がある。
-const saveChatLog = async (newMessage: Message) => {
+const saveMessage = async (newMessage: Message) => {
   try {
     await createMessage(newMessage);
+    console.log("Saved message:", newMessage.id);
   } catch (error) {
     console.error("Failed to save message:", error);
   }

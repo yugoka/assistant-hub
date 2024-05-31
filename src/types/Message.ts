@@ -13,7 +13,7 @@ export type MessageForDB = {
   thread_id: string;
   role: "assistant" | "system" | "user" | "tool";
   content?: string;
-  created_at?: Date;
+  created_at?: string;
   // stringfyしたオブジェクトとして保存
   tool_calls?: string;
   tool_call_id?: string;
@@ -22,22 +22,22 @@ export type MessageForDB = {
 
 export type SystemMessage = ChatCompletionSystemMessageParam & {
   id: string;
-  created_at?: Date;
+  created_at?: string;
   thread_id: string;
 };
 export type UserMessage = ChatCompletionUserMessageParam & {
   id: string;
-  created_at?: Date;
+  created_at?: string;
   thread_id: string;
 };
 export type AssistantMessage = ChatCompletionAssistantMessageParam & {
   id: string;
-  created_at?: Date;
+  created_at?: string;
   thread_id: string;
 };
 export type ToolMessage = ChatCompletionToolMessageParam & {
   id: string;
-  created_at?: Date;
+  created_at?: string;
   thread_id: string;
 };
 

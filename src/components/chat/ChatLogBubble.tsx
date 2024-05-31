@@ -37,7 +37,8 @@ export default function ChatLogBubble({ message, username }: Props) {
   );
 }
 
-const formatDate = (date: Date): string => {
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const targetDate = new Date(

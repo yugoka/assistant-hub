@@ -69,7 +69,7 @@ export const getThreadByID = async ({
   userID,
 }: GetThreadByIDOptions): Promise<Thread | null> => {
   if (!threadID) {
-    throw new Error("Thread ID is not specified");
+    throw new Error("Thread ID not specified");
   }
 
   const supabase = createClient();

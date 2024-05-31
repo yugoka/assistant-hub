@@ -40,7 +40,7 @@ export const getMessagesByThreadID = async ({
   pageSize = 10,
 }: GetMessagesByThreadIdOptions): Promise<Message[]> => {
   if (!threadID) {
-    throw new Error("Thread ID is not specified");
+    throw new Error("Thread ID not specified");
   }
   const supabase = createClient();
 
@@ -56,7 +56,9 @@ export const getMessagesByThreadID = async ({
     throw error;
   }
 
-  return data || [];
+  // フロントで読める形にパースし直す
+  const parsedMessage = data.map((message) => parseDBMessage(message));
+  return parsedMessage || [];
 };
 
 // メッセージを保存用に変換
