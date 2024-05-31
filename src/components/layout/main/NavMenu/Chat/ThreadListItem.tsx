@@ -10,7 +10,8 @@ type Props = {
 };
 
 export default function ThreadListItem({ thread }: Props) {
-  const deleteThread = async () => {
+  const deleteThread = async (event: React.MouseEvent) => {
+    event.preventDefault();
     const supabase = createClient();
     await supabase.from("Threads").delete().eq("id", thread.id);
   };

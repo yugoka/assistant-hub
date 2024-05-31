@@ -5,9 +5,14 @@ import { useChat } from "@/hooks/useChat";
 import React from "react";
 import ChatLogs from "./ChatLogs";
 
-export default function ChatScreen() {
+type Props = {
+  threadID: string | null | undefined;
+};
+
+export default function ChatScreen({ threadID }: Props) {
   const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/assistant/",
+    api: "/api/chat/",
+    threadID,
   });
 
   const endOfMessages = React.useRef<HTMLDivElement>(null);

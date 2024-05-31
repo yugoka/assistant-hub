@@ -9,7 +9,6 @@ import {
 import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
-import { Message } from "@/types/Message";
 
 const mockTools = [
   {
@@ -160,15 +159,16 @@ export const runResponderAgent = async (
 
 const toolMessages = [
   "藤沢市は晴れで、気温は23℃です",
-  "平塚市市は晴れで、気温は17℃です",
   "クーラーの設定温度を23℃にしました",
   "実行に失敗しました",
 ];
+
+let i = 0;
+
 const executeTools = async (
   toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
 ): Promise<ChatCompletionToolMessageParam[]> => {
   console.log("tool Calls:", toolCalls);
-  let i = 0;
 
   return toolCalls.map((toolCall) => {
     i += 1;

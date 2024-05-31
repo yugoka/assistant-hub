@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import ThreadListItem from "./ThreadListItem";
 import React from "react";
 import { Thread } from "@/types/Thread";
+import { useUser } from "@/contexts/UserContext";
 
 type Props = {
   query: {
@@ -15,11 +16,9 @@ export default function ThreadList({ query }: Props) {
   const supabase = createClient();
   const [threads, setThreads] = React.useState<Thread[]>([]);
 
-  const fetchThreads = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const { user } = useUser();
 
+  const fetchThreads = async () => {
     let queryBuilder = supabase
       .from("Threads")
       .select()

@@ -1,79 +1,123 @@
 import { Message, MessageChunk } from "@/types/Message";
 import { AssistantAPIParam } from "@/types/api/Assistant";
-import { generateUUIDForMessage } from "@/utils/message";
+import { generateUUIDForMessage, parseMessageContent } from "@/utils/message";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import React from "react";
+import { CreateThreadInput } from "@/services/threads";
+import { Thread } from "@/types/Thread";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/contexts/UserContext";
 
 interface UseChatProps {
   api: string;
+  threadID: string | null | undefined;
 }
 
-export const useChat = ({ api }: UseChatProps) => {
+export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState<string>("");
+  const [threadID, setThreadID] = React.useState<string | null | undefined>(
+    defaultThreadID
+  );
+
+  const router = useRouter();
+  const { user } = useUser();
+
+  // 読み込む
+  React.useEffect(() => {
+    if (threadID != defaultThreadID) {
+      setThreadID(defaultThreadID);
+    }
+  }, [defaultThreadID]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInput(event.target.value);
   };
 
+  // 送信時
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !user) return;
 
-    const userMessage: Message = {
-      id: generateUUIDForMessage(),
-      role: "user",
-      content: input,
-    };
+    try {
+      const targetThreadID = await ensureThreadID(input, user.id);
+      const userMessage = createUserMessage(input, targetThreadID);
 
-    const newMessages = [...messages, userMessage];
+      const newMessages = [...messages, userMessage];
+      setMessages(newMessages);
+      setInput("");
 
-    // ユーザー送信のメッセージを追加
-    setMessages(newMessages);
-    // 入力フィールドをクリア
-    setInput("");
+      await sendMessageToAPI(newMessages, targetThreadID);
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    }
+  };
 
-    // APIにメッセージを送信
+  // スレッドが無ければ作る
+  const ensureThreadID = async (
+    firstMessageContent: string,
+    userID: string
+  ): Promise<string> => {
+    if (threadID) return threadID;
+
+    const thread = await createThread(firstMessageContent, userID);
+    setThreadID(thread.id);
+    router.replace(`/chat?thread_id=${thread.id}`);
+    return thread.id;
+  };
+
+  const createUserMessage = (content: string, threadID: string): Message => ({
+    id: generateUUIDForMessage(),
+    role: "user",
+    content,
+    thread_id: threadID,
+  });
+
+  const sendMessageToAPI = async (newMessages: Message[], threadID: string) => {
     try {
       const messagesStream = await getMessagesStream(
-        { messages: newMessages },
+        { messages: newMessages, threadID, save: true },
         api
       );
 
-      let buffer = "";
-      let currentMessageID = "";
-
-      for await (const chunk of messagesStream) {
-        buffer += chunk;
-        const lines = buffer.split("\n");
-
-        // 最後の行はまだ完全なJSONでない可能性があるので、次のループに持ち越す
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.trim() === "") continue;
-          try {
-            const parsedChunk = JSON.parse(line) as MessageChunk;
-            if (parsedChunk.id === currentMessageID) {
-              // メッセージIDがそのままなら、最後のメッセージにチャンクを統合する
-              newMessages[newMessages.length - 1] = mergeResponseObjects(
-                newMessages[newMessages.length - 1],
-                parsedChunk
-              ) as Message;
-            } else {
-              // メッセージIDが新出なら新しいメッセージを用意する
-              currentMessageID = parsedChunk.id;
-              newMessages.push(parsedChunk as Message);
-            }
-
-            setMessages([...newMessages]);
-          } catch (error) {
-            console.error("Error parsing JSON line:", error);
-          }
-        }
-      }
+      await processMessageStream(messagesStream, newMessages);
     } catch (error) {
       console.error("Error sending message:", error);
+    }
+  };
+
+  const processMessageStream = async (
+    messagesStream: AsyncIterable<string>,
+    newMessages: Message[]
+  ) => {
+    let buffer = "";
+    let currentMessageID = "";
+
+    for await (const chunk of messagesStream) {
+      buffer += chunk;
+      const lines = buffer.split("\n");
+
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.trim() === "") continue;
+        try {
+          const parsedChunk = JSON.parse(line) as MessageChunk;
+          if (parsedChunk.id === currentMessageID) {
+            newMessages[newMessages.length - 1] = mergeResponseObjects(
+              newMessages[newMessages.length - 1],
+              parsedChunk
+            ) as Message;
+          } else {
+            currentMessageID = parsedChunk.id;
+            newMessages.push(parsedChunk as Message);
+          }
+
+          setMessages([...newMessages]);
+        } catch (error) {
+          console.error("Error parsing JSON line:", error);
+        }
+      }
     }
   };
 
@@ -117,4 +161,31 @@ const getMessagesStream = async (
       }
     },
   };
+};
+
+// メッセージからスレッドを作成するユーティリティ関数
+const createThread = async (
+  firstMessageContent: string,
+  userID: string
+): Promise<Thread> => {
+  const userMessage = firstMessageContent || "New Thread";
+  const truncatedMessage =
+    userMessage.length > 30 ? `${userMessage.slice(0, 30)}...` : userMessage;
+
+  const reqBody: CreateThreadInput = {
+    name: truncatedMessage,
+    user_id: userID,
+  };
+
+  const res = await fetch("/api/threads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(reqBody),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to create thread: ${res.status}`);
+  }
+
+  return res.json();
 };

@@ -1,6 +1,5 @@
-import { runResponderAgent } from "@/assistant/agents/responderAgent";
+import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
 import { AssistantAPIParam } from "@/types/api/Assistant";
-import { StreamingTextResponse } from "ai";
 import { ChatCompletionMessage } from "openai/resources";
 
 //============
