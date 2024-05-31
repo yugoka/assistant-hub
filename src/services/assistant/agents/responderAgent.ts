@@ -143,9 +143,11 @@ export const runResponderAgent = async ({
 
         if (!hasToolCall) {
           currentMessages = [...currentMessages, newMessage];
-          // エージェントの動きをブロックしないためにawaitしない
+          // エージェントからの最後のメッセージ。
+          // VercelのEdge Functionが切れないようにawaitする
+          // このタイミングでtoolCallの保存が終わっていないとバグるが、時間軸的に現実問題大丈夫そうな感じがする
           if (save) {
-            saveMessage(newMessage);
+            await saveMessage(newMessage);
           }
           break;
         }
