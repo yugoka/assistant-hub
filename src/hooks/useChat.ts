@@ -17,9 +17,8 @@ interface UseChatProps {
 export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState<string>("");
-  const [threadID, setThreadID] = React.useState<string | null | undefined>(
-    defaultThreadID
-  );
+  const [threadID, setThreadID] = React.useState<string | null | undefined>("");
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
   const router = useRouter();
   const { user } = useUser();
@@ -27,10 +26,18 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
   // 読み込む
   React.useEffect(() => {
     (async () => {
-      if (defaultThreadID && threadID !== defaultThreadID) {
-        setThreadID(defaultThreadID);
-        const messages = await getMessages(defaultThreadID);
-        setMessages(messages);
+      if (defaultThreadID) {
+        if (threadID !== defaultThreadID) {
+          try {
+            setIsLoading(true);
+            const messages = await getMessages(defaultThreadID);
+            setMessages(messages);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      } else {
+        setMessages([]);
       }
     })();
   }, [defaultThreadID]);
@@ -131,6 +138,7 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
     input,
     handleInputChange,
     handleSubmit,
+    isLoading,
   };
 };
 

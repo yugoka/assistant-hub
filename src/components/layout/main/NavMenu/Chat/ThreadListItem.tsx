@@ -1,8 +1,10 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Thread } from "@/types/Thread";
 import { createClient } from "@/utils/supabase/client";
 import { TrashIcon } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import React from "react";
 
 type Props = {
@@ -16,10 +18,22 @@ export default function ThreadListItem({ thread }: Props) {
     await supabase.from("Threads").delete().eq("id", thread.id);
   };
 
+  const searchParams = useSearchParams();
+
+  // DRY!!
+  const hoverStyles = `hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50`;
+  const selectedStyles = `bg-gray-200 text-gray-900 dark:bg-gray-800 dark:text-gray-50`;
+  const defaultStyles = `text-gray-700 dark:text-gray-400`;
+
+  console.log(searchParams);
+  const isSelected = searchParams.get("thread_id") === thread.id;
+
   return (
     <>
       <Link
-        className="flex w-full items-center justify-between rounded-md px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
+        className={`flex w-full items-center justify-between rounded-md px-3 py-1 text-sm font-medium ${
+          isSelected ? selectedStyles : defaultStyles
+        } ${hoverStyles}`}
         href={`/chat?thread_id=${thread.id}`}
       >
         <span className="flex my-1 flex-grow flex-shrink items-center truncate">
