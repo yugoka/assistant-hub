@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 export const runtime = "edge";
 
 // スレッド作成
+// RLSがあるとはいえ、ユーザー設定のuserIDを鵜呑みにするのはちょい危険かもしれない
 export async function POST(req: Request) {
   try {
     const params: CreateThreadInput = await req.json();

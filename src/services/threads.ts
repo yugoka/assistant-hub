@@ -12,8 +12,6 @@ export const createThread = async (
 ): Promise<Thread> => {
   const supabase = createClient();
 
-  console.log(input);
-
   const { data, error } = await supabase
     .from("Threads")
     .insert([input])
