@@ -39,6 +39,7 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
       } else {
         setMessages([]);
       }
+      setThreadID(defaultThreadID);
     })();
   }, [defaultThreadID]);
 
@@ -190,6 +191,7 @@ const getMessages = async (
   if (pageSize !== undefined) {
     params.append("page_size", `${pageSize}`);
   }
+
   const url = `/api/messages?${params.toString()}`;
 
   try {

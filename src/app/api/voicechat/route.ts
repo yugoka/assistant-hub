@@ -1,6 +1,7 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
+import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
 import { getMessagesByThreadID } from "@/services/messages";
-import { AssistantAPIParam } from "@/types/api/Assistant";
+import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
 import { ChatCompletionMessage } from "openai/resources";
 
 //============
@@ -14,16 +15,14 @@ export async function POST(req: Request) {
   if (!params.threadID) {
     throw new Error("Thread ID not specified");
   }
-  // メッセージが指定されていない場合はDBから持ってくる
-  if (!params.messages) {
-    params.messages = await getMessagesByThreadID({
-      threadID: params.threadID,
-      page: params.page,
-      pageSize: params.pageSize,
-    });
-  }
 
-  const responseStream = await runResponderAgent(params);
+  const messages = await getMessagesFromAssistantAPIParams(params);
+  const responderAgentParams: ResponderAgentParam = {
+    ...params,
+    messages,
+  };
+
+  const responseStream = await runResponderAgent(responderAgentParams);
   const modifiedStream = await modifyStreamForVoiceChat(responseStream);
 
   // ストリームをそのままレスポンスとして返す

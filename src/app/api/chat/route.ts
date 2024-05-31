@@ -1,6 +1,7 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
+import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
 import { getMessagesByThreadID } from "@/services/messages";
-import { AssistantAPIParam } from "@/types/api/Assistant";
+import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
 
 //============
 // 外部用API
@@ -14,16 +15,14 @@ export async function POST(req: Request) {
       throw new Error("Thread ID not specified");
     }
 
-    // メッセージが指定されていない場合はDBから持ってくる
-    if (!params.messages) {
-      params.messages = await getMessagesByThreadID({
-        threadID: params.threadID,
-        page: params.page,
-        pageSize: params.pageSize,
-      });
-    }
+    const messages = await getMessagesFromAssistantAPIParams(params);
+    console.log("msg:", messages);
+    const responderAgentParams: ResponderAgentParam = {
+      ...params,
+      messages,
+    };
 
-    const responseStream = await runResponderAgent(params);
+    const responseStream = await runResponderAgent(responderAgentParams);
     const modifiedStream = await modifyStreamForWebChat(responseStream);
 
     // ストリームをそのままレスポンスとして返す

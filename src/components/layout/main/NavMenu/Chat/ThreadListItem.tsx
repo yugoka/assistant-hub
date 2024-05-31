@@ -25,7 +25,6 @@ export default function ThreadListItem({ thread }: Props) {
   const selectedStyles = `bg-gray-200 text-gray-900 dark:bg-gray-800 dark:text-gray-50`;
   const defaultStyles = `text-gray-700 dark:text-gray-400`;
 
-  console.log(searchParams);
   const isSelected = searchParams.get("thread_id") === thread.id;
 
   return (

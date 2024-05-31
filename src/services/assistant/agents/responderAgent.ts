@@ -1,4 +1,4 @@
-import { AssistantAPIParam } from "@/types/api/Assistant";
+import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
 import {
   ChatCompletionChunk,
@@ -78,7 +78,7 @@ export const runResponderAgent = async ({
   messages,
   threadID,
   save = true,
-}: AssistantAPIParam) => {
+}: ResponderAgentParam) => {
   if (!messages.length) {
     throw new Error("Messages array is empty");
   }
