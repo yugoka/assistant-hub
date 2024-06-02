@@ -79,6 +79,7 @@ export const runResponderAgent = async ({
   threadID,
   save = true,
 }: ResponderAgentParam) => {
+  console.log("=== Running Responder Agent ===");
   if (!messages.length) {
     throw new Error("Messages array is empty");
   }
@@ -95,9 +96,7 @@ export const runResponderAgent = async ({
   const readableStream = new ReadableStream<string>({
     async start(controller) {
       while (steps <= MAX_TOOLCALL_STEPS) {
-        console.log("=== Running Responder Agent ===");
-        console.log("Steps:", steps);
-        console.log("Messages:", currentMessages);
+        console.log("Step:", steps);
 
         let newChunkObject = {} as ChatCompletionChunk;
 
@@ -221,6 +220,14 @@ const saveMessages = async (newMessages: Message[]) => {
   try {
     for await (const message of newMessages) {
       await createMessage(message);
+      console.log(
+        "[Message Saved]",
+        message.role,
+        message.content || "",
+        message.role === "assistant" && message.tool_calls?.length
+          ? `(${message.tool_calls.length} tool calls)`
+          : ""
+      );
     }
   } catch (error) {
     console.error("Failed to save message:", error);

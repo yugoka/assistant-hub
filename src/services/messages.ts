@@ -6,11 +6,8 @@ import { createClient } from "@/utils/supabase/server";
 // idが事前生成される場合があるので、idごと受け取る
 export const createMessage = async (newMessage: Message): Promise<Message> => {
   const supabase = createClient();
-
   // supabase登録用に形式を変換する
   const input: MessageForDB = convertMessageForDB(newMessage);
-
-  console.log(input);
 
   const { data, error } = await supabase
     .from("Messages")
@@ -19,7 +16,6 @@ export const createMessage = async (newMessage: Message): Promise<Message> => {
     .single();
 
   const result = parseDBMessage(data);
-  console.log(result);
 
   if (error) {
     throw error;
