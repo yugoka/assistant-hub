@@ -1,11 +1,11 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import ThreadListItem from "./ThreadListItem";
 import React from "react";
-import { Thread } from "@/types/Thread";
 import { useUser } from "@/contexts/UserContext";
 import { useSearchParams } from "next/navigation";
+import ToolsListItem from "./ToolsListItem";
+import { Tool } from "@/types/Tool";
 
 type Props = {
   query: {
@@ -13,17 +13,17 @@ type Props = {
   };
 };
 
-export default function ThreadList({ query }: Props) {
+export default function ToolsList({ query }: Props) {
   const supabase = createClient();
-  const [threads, setThreads] = React.useState<Thread[]>([]);
+  const [tools, setTools] = React.useState<Tool[]>([]);
   const searchParams = useSearchParams();
-  const selectedThreadID = searchParams.get("thread_id");
+  const selectedToolID = searchParams.get("tool_id");
 
   const { user } = useUser();
 
-  const fetchThreads = async () => {
+  const fetchTools = async () => {
     let queryBuilder = supabase
-      .from("Threads")
+      .from("Tools")
       .select()
       .eq("user_id", user?.id)
       .order("created_at");
@@ -33,47 +33,47 @@ export default function ThreadList({ query }: Props) {
     }
 
     const result = await queryBuilder;
-    const threads = result.data;
+    const tools = result.data;
 
-    setThreads(threads || []);
+    setTools(tools || []);
   };
 
-  const subscribeThreadChanges = () => {
+  const subscribeToolChanges = () => {
     // 変更を購読する
     supabase
-      .channel("thread-list")
+      .channel("tools-list")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "Threads",
+          table: "Tools",
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {
           console.log("payload:", payload);
-          fetchThreads();
+          fetchTools();
         }
       )
       .subscribe();
   };
 
   React.useEffect(() => {
-    fetchThreads();
-    subscribeThreadChanges();
+    fetchTools();
+    subscribeToolChanges();
     return () => {
-      supabase.channel("thread-list").unsubscribe();
+      supabase.channel("tool-list").unsubscribe();
     };
   }, [query]);
 
   return (
     <>
-      {threads &&
-        threads.map((thread) => (
-          <ThreadListItem
-            key={thread.id}
-            thread={thread}
-            isSelected={thread.id === selectedThreadID}
+      {tools &&
+        tools.map((tool) => (
+          <ToolsListItem
+            key={tool.id}
+            tool={tool}
+            isSelected={tool.id === selectedToolID}
           />
         ))}
     </>

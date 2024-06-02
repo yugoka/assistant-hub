@@ -1,11 +1,11 @@
 import ThreadList from "./ThreadList";
-import NewChatButton from "./NewChatButton";
+import NewButton from "../NewButton";
 import React from "react";
 
 export default function ChatNavigation() {
   return (
     <>
-      <NewChatButton />
+      <NewButton href="/chat">New Chat</NewButton>
       <ThreadList query={{}} />
     </>
   );

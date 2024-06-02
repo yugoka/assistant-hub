@@ -10,10 +10,9 @@ import Link from "next/link";
 import NavMenuDropDown from "./NavMenuDropDown";
 import React from "react";
 import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import ThreadList from "./Chat/ThreadList";
 import ChatNavigation from "./Chat/ChatNavigation";
 import { ToolIcon } from "@/components/common/icons/ToolIcon";
+import ToolsNavigation from "./Tools/ToolsNavigation";
 
 export type NavMenuMode = {
   name: string;
@@ -68,7 +67,13 @@ export default function NavMenu() {
       </div>
 
       <nav className="space-y-1 px-4 py-3">
-        {currentNavMenuMode === navMenuChatMode ? <ChatNavigation /> : <></>}
+        {currentNavMenuMode === navMenuChatMode ? (
+          <ChatNavigation />
+        ) : currentNavMenuMode === navMenuToolsMode ? (
+          <ToolsNavigation />
+        ) : (
+          <></>
+        )}
       </nav>
     </div>
   );

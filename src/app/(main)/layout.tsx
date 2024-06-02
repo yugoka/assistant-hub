@@ -3,7 +3,7 @@ import NavMenu from "@/components/layout/main/NavMenu/NavMenu";
 import { MainLayoutHeader } from "@/components/layout/main/Header";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import UserProviderWrapper from "@/components/layout/main/UserProvicerWrapper"; // 新しいクライアントコンポーネントをインポート
+import UserProviderWrapper from "@/components/layout/main/UserProviderWrapper"; // 新しいクライアントコンポーネントをインポート
 export default async function MainLayout({
   children,
 }: {

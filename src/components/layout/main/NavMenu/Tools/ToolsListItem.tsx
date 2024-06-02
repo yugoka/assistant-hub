@@ -1,29 +1,29 @@
 "use client";
-import { Thread } from "@/types/Thread";
 import { createClient } from "@/utils/supabase/client";
 import React from "react";
 import NavMenuListItem from "../NavMenuListItem";
+import { Tool } from "@/types/Tool";
 
 type Props = {
-  thread: Thread;
+  tool: Tool;
   isSelected: boolean;
 };
 
-export default function ThreadListItem({ thread, isSelected }: Props) {
-  const deleteThread = async (event: React.MouseEvent) => {
+export default function ToolsListItem({ tool, isSelected }: Props) {
+  const deleteTool = async (event: React.MouseEvent) => {
     event.preventDefault();
     const supabase = createClient();
-    await supabase.from("Threads").delete().eq("id", thread.id);
+    await supabase.from("Tools").delete().eq("id", tool.id);
   };
 
   return (
     <>
       <NavMenuListItem
-        href={`/chat?thread_id=${thread.id}`}
-        onClickDeleteButton={deleteThread}
+        href={`/tools/${tool.id}`}
+        onClickDeleteButton={deleteTool}
         isSelected={isSelected}
       >
-        {thread.name}
+        {tool.name}
       </NavMenuListItem>
     </>
   );
