@@ -82,12 +82,12 @@ export const runResponderAgent = async ({
   if (!messages.length) {
     throw new Error("Messages array is empty");
   }
+  // 最後に保存するメッセージのリスト
+  const messagesToSave: Message[] = [];
+
   // ユーザーからのメッセージを保存する
   const lastMessage = messages[messages.length - 1];
-
-  if (save) {
-    saveMessage(lastMessage);
-  }
+  messagesToSave.push(lastMessage);
 
   let steps = 1;
   let currentMessages = messages;
@@ -141,14 +141,10 @@ export const runResponderAgent = async ({
         const hasToolCall =
           newChunkObject.choices[0].finish_reason === "tool_calls";
 
+        messagesToSave.push(newMessage);
+
         if (!hasToolCall) {
           currentMessages = [...currentMessages, newMessage];
-          // エージェントからの最後のメッセージ。
-          // VercelのEdge Functionが切れないようにawaitする
-          // このタイミングでtoolCallの保存が終わっていないとバグるが、時間軸的に現実問題大丈夫そうな感じがする
-          if (save) {
-            await saveMessage(newMessage);
-          }
           break;
         }
 
@@ -173,9 +169,8 @@ export const runResponderAgent = async ({
         // → 実行結果のないtool_callsをログに含めるとエラーが出るため。
         // エージェントの動きをブロックしないためにawaitしない
         if (save) {
-          saveMessage(newMessage);
           for (const toolMessage of toolCallResults) {
-            saveMessage(toolMessage);
+            messagesToSave.push(toolMessage);
           }
         }
 
@@ -183,6 +178,7 @@ export const runResponderAgent = async ({
         steps += 1;
       }
 
+      await saveMessages(messagesToSave);
       controller.close();
     },
   });
@@ -221,10 +217,11 @@ const executeTools = async (
 };
 
 // エージェントの動きをブロックしないために、awaitせずに使う場合がある。
-const saveMessage = async (newMessage: Message) => {
+const saveMessages = async (newMessages: Message[]) => {
   try {
-    await createMessage(newMessage);
-    console.log("Saved message:", newMessage.id);
+    for await (const message of newMessages) {
+      await createMessage(message);
+    }
   } catch (error) {
     console.error("Failed to save message:", error);
   }

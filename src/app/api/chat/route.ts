@@ -1,15 +1,16 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
 import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
-import { getMessagesByThreadID } from "@/services/messages";
 import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
+import { NextFetchEvent, NextRequest } from "next/server";
 
 //============
 // 外部用API
 //============
 export const runtime = "edge";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest, context: NextFetchEvent) {
   try {
+    console.log(context);
     const params: AssistantAPIParam = await req.json();
     if (!params.threadID) {
       throw new Error("Thread ID not specified");
