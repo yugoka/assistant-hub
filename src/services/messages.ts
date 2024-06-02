@@ -40,7 +40,11 @@ export const getMessagesByThreadID = async ({
   }
   const supabase = createClient();
 
-  let query = supabase.from("Messages").select("*").eq("thread_id", threadID);
+  let query = supabase
+    .from("Messages")
+    .select("*")
+    .eq("thread_id", threadID)
+    .order("created_at");
   if (page !== undefined) {
     query = query.range((page - 1) * pageSize, page * pageSize - 1);
   }

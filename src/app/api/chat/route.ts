@@ -8,16 +8,15 @@ import { NextFetchEvent, NextRequest } from "next/server";
 //============
 export const runtime = "edge";
 
-export async function POST(req: NextRequest, context: NextFetchEvent) {
+export async function POST(req: NextRequest) {
   try {
-    console.log(context);
     const params: AssistantAPIParam = await req.json();
     if (!params.threadID) {
       throw new Error("Thread ID not specified");
     }
 
     const messages = await getMessagesFromAssistantAPIParams(params);
-    console.log("msg:", messages);
+    console.log("input message length:", messages.length);
     const responderAgentParams: ResponderAgentParam = {
       ...params,
       messages,

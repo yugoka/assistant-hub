@@ -9,6 +9,7 @@ import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
+import { waitUntil } from "@vercel/functions";
 
 const mockTools = [
   {
@@ -177,7 +178,8 @@ export const runResponderAgent = async ({
         steps += 1;
       }
 
-      await saveMessages(messagesToSave);
+      // レスポンスが完了した後もvercelのfunctionを生存させる
+      waitUntil(saveMessages(messagesToSave));
       controller.close();
     },
   });
