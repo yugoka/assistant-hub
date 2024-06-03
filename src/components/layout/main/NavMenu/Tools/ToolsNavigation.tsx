@@ -1,11 +1,11 @@
-import NewButton from "../NewButton";
 import React from "react";
 import ToolsList from "./ToolsList";
+import NewToolButton from "./NewToolButton";
 
 export default function ToolsNavigation() {
   return (
     <>
-      <NewButton href="/tools">New Tool</NewButton>
+      <NewToolButton />
       <ToolsList query={{}} />
     </>
   );
