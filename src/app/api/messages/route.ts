@@ -1,6 +1,7 @@
 import { getMessagesByThreadID } from "@/services/messages";
 import { Message } from "@/types/Message";
 import { NextResponse } from "next/server";
+export const runtime = "edge";
 
 export async function GET(req: Request) {
   try {
