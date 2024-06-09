@@ -1,6 +1,5 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
 import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
-import { getMessagesByThreadID } from "@/services/messages";
 import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
 import { ChatCompletionMessage } from "openai/resources";
 

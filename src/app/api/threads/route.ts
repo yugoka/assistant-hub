@@ -30,14 +30,15 @@ export async function GET(req: Request) {
     }
 
     if (threadID) {
-      const result = getThreadByID({
+      const result = await getThreadByID({
         threadID,
         userID: userID || undefined,
       });
+
       const res = NextResponse.json(result, { status: 200 });
       return res;
     } else if (userID) {
-      const result = getThreads({ userId: userID });
+      const result = await getThreads({ userId: userID });
       const res = NextResponse.json(result, { status: 200 });
       return res;
     }
