@@ -60,8 +60,11 @@ export async function POST(req: Request) {
     const params: CreateThreadInput = {
       name: reqBody.name,
       user_id: reqBody.user_id,
-      thread_id: reqBody.thread_id,
     };
+    if (reqBody.id) {
+      params.id = reqBody.id;
+    }
+
     const result = await createThread(params);
     const res = NextResponse.json(result, { status: 200 });
     return res;

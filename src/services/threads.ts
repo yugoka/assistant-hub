@@ -3,9 +3,9 @@ import { createClient } from "@/utils/supabase/server";
 
 // スレッド作成
 export interface CreateThreadInput {
+  id?: string;
   name: string;
   user_id: string;
-  thread_id?: string;
 }
 export const createThread = async (
   input: CreateThreadInput
