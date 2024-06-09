@@ -14,8 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { ToolIcon } from "@/components/common/icons/ToolIcon";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { UseFormReturn, useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -25,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { authTypes } from "@/types/Tool";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
@@ -46,7 +46,7 @@ const openAPIJsonSchema = z.string().refine(
   }
 );
 
-const formSchema = z.object({
+export const toolEditorFormSchema = z.object({
   name: z
     .string()
     .min(2, {
@@ -60,26 +60,16 @@ const formSchema = z.object({
     })
     .max(1000, { message: "Description must be at most 1000 characters." }),
   schema: openAPIJsonSchema,
-  auth_type: z.string(),
+  auth_type: z.enum(authTypes),
   credential: z.string(),
 });
 
-export default function ToolEditor() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      schema: "",
-      auth_type: "None",
-      credential: "",
-    },
-  });
+type Props = {
+  form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
+  onSubmit: (values: z.infer<typeof toolEditorFormSchema>) => void;
+};
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-  };
-
+export default function ToolEditor({ form, onSubmit }: Props) {
   return (
     <Form {...form}>
       <form
