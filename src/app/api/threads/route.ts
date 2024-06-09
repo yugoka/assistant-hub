@@ -1,3 +1,4 @@
+import { getThreadByID, getThreads } from "./../../../services/threads";
 import {
   CreateThreadInput,
   GetThreadByIDOptions,
@@ -8,11 +9,58 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+// スレッド取得
+// フロントではあんまり使わないかも
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const threadID = url.searchParams.get("thread_id");
+    const userID = url.searchParams.get("user_id");
+
+    if (!threadID && !userID) {
+      return new Response(
+        JSON.stringify({ error: "Neither thread_id nor user_id specified" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    if (threadID) {
+      const result = getThreadByID({
+        threadID,
+        userID: userID || undefined,
+      });
+      const res = NextResponse.json(result, { status: 200 });
+      return res;
+    } else if (userID) {
+      const result = getThreads({ userId: userID });
+      const res = NextResponse.json(result, { status: 200 });
+      return res;
+    }
+  } catch (error) {
+    console.error("Error handling request:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+}
+
 // スレッド作成
-// RLSがあるとはいえ、ユーザー設定のuserIDを鵜呑みにするのはちょい危険かもしれない
 export async function POST(req: Request) {
   try {
-    const params: CreateThreadInput = await req.json();
+    const reqBody = await req.json();
+    const params: CreateThreadInput = {
+      name: reqBody.name,
+      user_id: reqBody.user_id,
+      thread_id: reqBody.thread_id,
+    };
     const result = await createThread(params);
     const res = NextResponse.json(result, { status: 200 });
     return res;

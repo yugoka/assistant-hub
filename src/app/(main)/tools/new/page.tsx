@@ -1,11 +1,10 @@
 "use client";
 import ToolEditor, {
   toolEditorFormSchema,
-} from "@/components/tools/ToolEditor/ToolEditor";
+} from "@/components/tools/ToolEditor";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createClient } from "@/utils/supabase/client";
 import { CreateToolInput } from "@/services/tools";
 
 export default function ToolsPage() {
@@ -41,7 +40,7 @@ export default function ToolsPage() {
 
   return (
     <>
-      <ToolEditor form={form} onSubmit={onSubmit} />
+      <ToolEditor form={form} onSubmit={onSubmit} variant="create" />
     </>
   );
 }

@@ -25,6 +25,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { authTypes } from "@/types/Tool";
+import Link from "next/link";
+import { PencilIcon } from "lucide-react";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
@@ -47,6 +49,7 @@ const openAPIJsonSchema = z.string().refine(
 );
 
 export const toolEditorFormSchema = z.object({
+  id: z.string().optional(),
   name: z
     .string()
     .min(2, {
@@ -62,25 +65,34 @@ export const toolEditorFormSchema = z.object({
   schema: openAPIJsonSchema,
   auth_type: z.enum(authTypes),
   credential: z.string(),
+  execution_count: z.number().optional(),
+  success_count: z.number().optional(),
+  average_execution_time: z.number().optional(),
 });
 
 type Props = {
   form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
   onSubmit: (values: z.infer<typeof toolEditorFormSchema>) => void;
+  variant: "create" | "edit";
 };
 
-export default function ToolEditor({ form, onSubmit }: Props) {
+export default function ToolEditor({ form, onSubmit, variant }: Props) {
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex justify-center"
       >
-        <Card className="w-full max-w-3xl md:m-3 border-none shadow-none">
+        <Card className="w-full max-w-4xl md:m-3 border-none shadow-none">
           <CardHeader>
-            <CardTitle className="items-center">
-              <ToolIcon className="inline-block mr-2 h-6 pb-1" />
-              Edit Tool
+            <CardTitle className="flex justify-between items-center">
+              <span>
+                <PencilIcon className="inline-block mr-2 h-6 pb-1" />
+                {variant === "create" ? "New" : "Edit"} Tool
+              </span>
+              <Link href={`/tools/${form.getValues().id || ""}`}>
+                <Button variant="outline">Back</Button>
+              </Link>
             </CardTitle>
             <CardDescription>Update the details of your API.</CardDescription>
           </CardHeader>

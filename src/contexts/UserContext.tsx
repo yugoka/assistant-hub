@@ -1,3 +1,4 @@
+"use client";
 import React, { createContext, useContext, ReactNode } from "react";
 import { AuthError, User } from "@supabase/supabase-js"; // AuthError のインポート
 
@@ -8,21 +9,21 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({
+export default function UserProviderWrapper({
   user,
   error,
   children,
 }: {
-  user: any | null;
+  user: User | null;
   error: AuthError | null;
-  children: ReactNode;
-}) => {
+  children: React.ReactNode;
+}) {
   return (
     <UserContext.Provider value={{ user, error }}>
       {children}
     </UserContext.Provider>
   );
-};
+}
 
 export const useUser = () => {
   const context = useContext(UserContext);

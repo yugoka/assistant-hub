@@ -1,9 +1,14 @@
-type Props = {
-  params: {
-    tool_id: string;
-  };
-};
+"use client";
+import Loader from "@/components/common/Loader";
+import ToolOverview from "@/components/tools/ToolOverview";
+import { useTool } from "@/contexts/ToolContext";
 
-export default async function ToolsPage({ params }: Props) {
-  return <>This is Single Tool Page: {params.tool_id}</>;
+export default function ToolsOverviewPage() {
+  const { tool } = useTool();
+
+  if (!tool) {
+    return <Loader />;
+  }
+
+  return <ToolOverview tool={tool} />;
 }

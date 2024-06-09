@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useChat } from "@/hooks/useChat";
 import React from "react";
 import ChatLogs from "./ChatLogs";
+import Loader from "../common/Loader";
 
 type Props = {
   threadID: string | null | undefined;
@@ -47,9 +48,7 @@ export default function ChatScreen({ threadID }: Props) {
     <div className="flex h-full flex-col w-full">
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
         {isLoading ? (
-          <div className="w-full h-full flex flex-col items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-400 border-t-transparent" />
-          </div>
+          <Loader />
         ) : (
           <>
             <div className="grid gap-4 max-w-2xl mx-auto">

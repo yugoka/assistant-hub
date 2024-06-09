@@ -9,7 +9,7 @@ export type Tool = {
   auth_type: (typeof authTypes)[number];
   user_id: string;
   credential: string;
-  exection_count: number;
+  execution_count: number;
   average_execution_time: number;
   success_count: number;
   created_at: string;
