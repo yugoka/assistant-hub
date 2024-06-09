@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { AuthError, User } from "@supabase/supabase-js"; // AuthError のインポート
 
 interface UserContextType {
@@ -16,7 +16,7 @@ export default function UserProviderWrapper({
 }: {
   user: User | null;
   error: AuthError | null;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <UserContext.Provider value={{ user, error }}>

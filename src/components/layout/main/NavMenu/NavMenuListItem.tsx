@@ -2,12 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { TrashIcon } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import { MouseEvent, ReactNode } from "react";
 
 type Props = {
-  children: React.ReactNode;
+  children: ReactNode;
   href: string;
-  onClickDeleteButton?: (event: React.MouseEvent) => void;
+  onClickDeleteButton?: (event: MouseEvent) => void;
   isSelected: boolean;
 };
 

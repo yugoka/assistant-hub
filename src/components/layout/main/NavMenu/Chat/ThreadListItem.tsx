@@ -1,8 +1,8 @@
 "use client";
 import { Thread } from "@/types/Thread";
 import { createClient } from "@/utils/supabase/client";
-import React from "react";
 import NavMenuListItem from "../NavMenuListItem";
+import { MouseEvent } from "react";
 
 type Props = {
   thread: Thread;
@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function ThreadListItem({ thread, isSelected }: Props) {
-  const deleteThread = async (event: React.MouseEvent) => {
+  const deleteThread = async (event: MouseEvent) => {
     event.preventDefault();
     const supabase = createClient();
     await supabase.from("Threads").delete().eq("id", thread.id);

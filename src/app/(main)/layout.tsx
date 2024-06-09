@@ -5,10 +5,11 @@ import { createClient } from "@/utils/supabase/server";
 import { QueryClient } from "react-query";
 import QueryProviderWrapper from "@/contexts/QueryContext";
 import UserProviderWrapper from "@/contexts/UserContext";
+import { ReactNode } from "react";
 export default async function MainLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const supabase = createClient();
 

@@ -3,8 +3,8 @@ import { ToolIcon } from "../common/icons/ToolIcon";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { Tool } from "@/types/Tool";
-import React from "react";
 import Link from "next/link";
+import { useState } from "react";
 
 type Props = {
   tool: Tool;
@@ -12,7 +12,7 @@ type Props = {
 
 export default function ToolOverview({ tool }: Props) {
   const [isCredentialVisible, setIsCredentialVisible] =
-    React.useState<boolean>(false);
+    useState<boolean>(false);
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto px-4 py-8 md:px-6">

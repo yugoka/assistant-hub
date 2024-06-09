@@ -3,11 +3,11 @@ import { Message, MessageChunk } from "@/types/Message";
 import { AssistantAPIParam } from "@/types/api/Assistant";
 import { generateUUIDForMessage, parseMessageContent } from "@/utils/message";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
-import React from "react";
 import { CreateThreadInput } from "@/services/threads";
 import { Thread } from "@/types/Thread";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
 interface UseChatProps {
   api: string;
@@ -15,16 +15,16 @@ interface UseChatProps {
 }
 
 export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
-  const [messages, setMessages] = React.useState<Message[]>([]);
-  const [input, setInput] = React.useState<string>("");
-  const [threadID, setThreadID] = React.useState<string | null | undefined>("");
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState<string>("");
+  const [threadID, setThreadID] = useState<string | null | undefined>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const router = useRouter();
   const { user } = useUser();
 
   // 読み込む
-  React.useEffect(() => {
+  useEffect(() => {
     (async () => {
       if (defaultThreadID) {
         if (threadID !== defaultThreadID) {
@@ -43,12 +43,12 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
     })();
   }, [defaultThreadID]);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     setInput(event.target.value);
   };
 
   // 送信時
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!input.trim() || !user) return;
 

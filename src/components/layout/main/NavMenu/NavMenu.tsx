@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import NavMenuDropDown from "./NavMenuDropDown";
-import React from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import ChatNavigation from "./Chat/ChatNavigation";
 import { ToolIcon } from "@/components/common/icons/ToolIcon";
@@ -16,7 +16,7 @@ import ToolsNavigation from "./Tools/ToolsNavigation";
 
 export type NavMenuMode = {
   name: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   pathname: string;
 };
 
@@ -41,10 +41,11 @@ export default function NavMenu() {
     navMenuModes.find((mode) => pathName.startsWith(mode.pathname)) ||
     navMenuChatMode;
 
-  const [currentNavMenuMode, setCurrentNavMenuMode] =
-    React.useState<NavMenuMode>(getCurrentMenuMode());
+  const [currentNavMenuMode, setCurrentNavMenuMode] = useState<NavMenuMode>(
+    getCurrentMenuMode()
+  );
 
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentNavMenuMode(getCurrentMenuMode());
   }, [pathName]);
 

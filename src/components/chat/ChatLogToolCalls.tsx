@@ -1,5 +1,5 @@
 import { Message } from "@/types/Message";
-import React from "react";
+import { useState } from "react";
 import { ToolIcon } from "../common/icons/ToolIcon";
 import {
   AccordionTrigger,
@@ -23,9 +23,7 @@ export default function ChatLogToolCalls({
   message,
   getToolCallResults,
 }: Props) {
-  const [toolCallResults, setToolCallResults] = React.useState<
-    ToolCallResult[]
-  >([]);
+  const [toolCallResults, setToolCallResults] = useState<ToolCallResult[]>([]);
 
   // アコーディオンを開いた時に結果を更新する
   const handleTrigger = (value: string) => {

@@ -2,10 +2,10 @@
 
 import { createClient } from "@/utils/supabase/client";
 import ThreadListItem from "./ThreadListItem";
-import React from "react";
 import { Thread } from "@/types/Thread";
 import { useUser } from "@/contexts/UserContext";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type Props = {
   query: {
@@ -15,7 +15,7 @@ type Props = {
 
 export default function ThreadList({ query }: Props) {
   const supabase = createClient();
-  const [threads, setThreads] = React.useState<Thread[]>([]);
+  const [threads, setThreads] = useState<Thread[]>([]);
   const searchParams = useSearchParams();
   const selectedThreadID = searchParams.get("thread_id");
 
@@ -58,7 +58,7 @@ export default function ThreadList({ query }: Props) {
       .subscribe();
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchThreads();
     subscribeThreadChanges();
     return () => {

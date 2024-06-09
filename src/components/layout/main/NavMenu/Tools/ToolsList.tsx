@@ -1,11 +1,11 @@
 "use client";
 
 import { createClient } from "@/utils/supabase/client";
-import React from "react";
 import { useUser } from "@/contexts/UserContext";
 import { useSearchParams } from "next/navigation";
 import ToolsListItem from "./ToolsListItem";
 import { Tool } from "@/types/Tool";
+import { useEffect, useState } from "react";
 
 type Props = {
   query: {
@@ -15,7 +15,7 @@ type Props = {
 
 export default function ToolsList({ query }: Props) {
   const supabase = createClient();
-  const [tools, setTools] = React.useState<Tool[]>([]);
+  const [tools, setTools] = useState<Tool[]>([]);
   const searchParams = useSearchParams();
   const selectedToolID = searchParams.get("tool_id");
 
@@ -58,7 +58,7 @@ export default function ToolsList({ query }: Props) {
       .subscribe();
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchTools();
     subscribeToolChanges();
     return () => {

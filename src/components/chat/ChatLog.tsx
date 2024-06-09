@@ -1,5 +1,4 @@
 import { Message } from "@/types/Message";
-import React from "react";
 import ChatLogBubble from "./ChatLogBubble";
 import ChatLogToolCalls, { ToolCallResult } from "./ChatLogToolCalls";
 

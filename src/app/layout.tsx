@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { Inter as FontSans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 const fontSans = FontSans({
   subsets: ["latin"],

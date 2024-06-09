@@ -1,6 +1,5 @@
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "@/utils/message";
-import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

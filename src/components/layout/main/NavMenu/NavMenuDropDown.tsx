@@ -12,10 +12,11 @@ import {
 } from "lucide-react";
 import { NavMenuMode } from "./NavMenu";
 import { Button } from "@/components/ui/button";
+import { Dispatch, SetStateAction } from "react";
 
 type Props = {
   currentNavMenuMode: NavMenuMode;
-  setCurrentNavMenuMode: React.Dispatch<React.SetStateAction<NavMenuMode>>;
+  setCurrentNavMenuMode: Dispatch<SetStateAction<NavMenuMode>>;
   navMenuModes: NavMenuMode[];
 };
 

@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChat } from "@/hooks/useChat";
-import React from "react";
+import { useEffect, useRef } from "react";
 import ChatLogs from "./ChatLogs";
 import Loader from "../common/Loader";
 
@@ -17,11 +17,11 @@ export default function ChatScreen({ threadID }: Props) {
       threadID,
     });
 
-  const endOfMessages = React.useRef<HTMLDivElement>(null);
-  const scrollContainer = React.useRef(null);
+  const endOfMessages = useRef<HTMLDivElement>(null);
+  const scrollContainer = useRef(null);
 
   // 自動スクロール
-  React.useEffect(() => {
+  useEffect(() => {
     followBottom(80);
   }, [messages]);
 
