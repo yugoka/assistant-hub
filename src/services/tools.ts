@@ -1,6 +1,9 @@
 import { AuthType, Tool } from "@/types/Tool";
 import { createClient } from "@/utils/supabase/server";
 
+// ==============
+// ツール作成
+// ==============
 export interface CreateToolInput {
   name: string;
   description: string;
@@ -24,7 +27,9 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   return data;
 };
 
+// ==============
 // IDによるツール取得
+// ==============
 export interface GetToolByIDOptions {
   toolID: string;
 }
@@ -51,7 +56,9 @@ export const getToolByID = async ({
   return data || null;
 };
 
+// ==============
 // ツール更新
+// ==============
 export interface UpdateToolInput {
   id: string;
   name?: string;
@@ -79,4 +86,23 @@ export const updateTool = async (input: UpdateToolInput) => {
   if (error) throw error;
 
   return data as Tool;
+};
+
+// ==============
+// ツール削除
+// ==============
+export interface DeleteToolInput {
+  id: string;
+}
+export const deleteTool = async (input: DeleteToolInput) => {
+  if (!input.id) {
+    throw new Error("Tool ID not specified");
+  }
+  const supabase = createClient();
+
+  const { error } = await supabase.from("Tools").delete().eq("id", input.id);
+
+  if (error) throw error;
+
+  return;
 };

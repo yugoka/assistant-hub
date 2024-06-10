@@ -2,8 +2,10 @@ import { Message, MessageForDB } from "@/types/Message";
 import { parseMessageContent } from "@/utils/message";
 import { createClient } from "@/utils/supabase/server";
 
-// スレッド作成
+// ==============
+// メッセージ作成
 // idが事前生成される場合があるので、idごと受け取る
+// ==============
 export const createMessage = async (newMessage: Message): Promise<Message> => {
   const supabase = createClient();
   // supabase登録用に形式を変換する
@@ -24,7 +26,9 @@ export const createMessage = async (newMessage: Message): Promise<Message> => {
   return result;
 };
 
+// ==============
 // スレッドIDによるメッセージ取得
+// ==============
 interface GetMessagesByThreadIdOptions {
   threadID: string;
   page?: number;
@@ -61,7 +65,9 @@ export const getMessagesByThreadID = async ({
   return parsedMessage || [];
 };
 
+// ==============
 // メッセージを保存用に変換
+// ==============
 const convertMessageForDB = (message: Message): MessageForDB => {
   const toolCalls = message.role === "assistant" && message.tool_calls;
 
@@ -72,7 +78,9 @@ const convertMessageForDB = (message: Message): MessageForDB => {
   };
 };
 
+// ==============
 // DBから取ってきたメッセージを表示用に変換
+// ==============
 const parseDBMessage = (messageForDB: MessageForDB): Message => {
   if (messageForDB.role === "assistant") {
     return {

@@ -1,7 +1,9 @@
 import { Thread } from "@/types/Thread";
 import { createClient } from "@/utils/supabase/server";
 
+// ==============
 // スレッド作成
+// ==============
 export interface CreateThreadInput {
   id?: string;
   name: string;
@@ -27,7 +29,9 @@ export const createThread = async (
   return data;
 };
 
+// ==============
 // スレッド取得
+// ==============
 export interface GetThreadsOptions {
   userId?: string;
   page?: number;
@@ -58,7 +62,9 @@ export const getThreads = async ({
   return data || [];
 };
 
+// ==============
 // IDによるスレッド取得
+// ==============
 export interface GetThreadByIDOptions {
   threadID: string;
 }
@@ -88,4 +94,48 @@ export const getThreadByID = async ({
   }
 
   return data || null;
+};
+
+// ==============
+// スレッド更新
+// ==============
+export interface UpdateThreadInput {
+  id: string;
+  name?: string;
+}
+export const updateThread = async (input: UpdateThreadInput) => {
+  if (!input.id) {
+    throw new Error("Thread ID not specified");
+  }
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("Threads")
+    .update({ ...input, id: undefined })
+    .eq("id", input.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return data as Thread;
+};
+
+// ==============
+// スレッド削除
+// ==============
+export interface DeleteThreadInput {
+  id: string;
+}
+export const deleteThread = async (input: DeleteThreadInput) => {
+  if (!input.id) {
+    throw new Error("Thread ID not specified");
+  }
+  const supabase = createClient();
+
+  const { error } = await supabase.from("Threads").delete().eq("id", input.id);
+
+  if (error) throw error;
+
+  return;
 };
