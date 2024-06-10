@@ -32,7 +32,6 @@ export async function GET(req: Request) {
     if (threadID) {
       const result = await getThreadByID({
         threadID,
-        userID: userID || undefined,
       });
 
       const res = NextResponse.json(result, { status: 200 });

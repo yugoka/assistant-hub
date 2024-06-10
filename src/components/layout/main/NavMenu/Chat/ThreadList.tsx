@@ -1,11 +1,13 @@
 "use client";
 
-import { createClient } from "@/utils/supabase/client";
 import ThreadListItem from "./ThreadListItem";
 import { Thread } from "@/types/Thread";
 import { useUser } from "@/contexts/UserContext";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { useQuery } from "react-query";
+import ErrorToast from "@/components/common/ErrorToast";
 
 type Props = {
   query: {
@@ -14,32 +16,22 @@ type Props = {
 };
 
 export default function ThreadList({ query }: Props) {
-  const supabase = createClient();
-  const [threads, setThreads] = useState<Thread[]>([]);
   const searchParams = useSearchParams();
   const selectedThreadID = searchParams.get("thread_id");
-
+  const supabase = createClient();
   const { user } = useUser();
 
-  const fetchThreads = async () => {
-    let queryBuilder = supabase
-      .from("Threads")
-      .select()
-      .eq("user_id", user?.id)
-      .order("created_at");
+  const {
+    data: threads,
+    error,
+    refetch,
+  } = useQuery<Thread[], Error>(["get-thread-list", user?.id], async () => {
+    const res = await fetch(`/api/threads?user_id=${user?.id || ""}`);
+    const data = await res.json();
+    return data as Thread[];
+  });
 
-    if (query.nameLike) {
-      queryBuilder = queryBuilder.like("name", query.nameLike);
-    }
-
-    const result = await queryBuilder;
-    const threads = result.data;
-
-    setThreads(threads || []);
-  };
-
-  const subscribeThreadChanges = () => {
-    // 変更を購読する
+  useEffect(() => {
     supabase
       .channel("thread-list")
       .on(
@@ -52,19 +44,26 @@ export default function ThreadList({ query }: Props) {
         },
         (payload) => {
           console.log("payload:", payload);
-          fetchThreads();
+          refetch();
         }
       )
       .subscribe();
-  };
-
-  useEffect(() => {
-    fetchThreads();
-    subscribeThreadChanges();
     return () => {
       supabase.channel("thread-list").unsubscribe();
     };
-  }, [query]);
+  }, []);
+
+  if (error) {
+    <ErrorToast />;
+  }
+
+  if (!threads) {
+    return (
+      <div className="pt-5 text-gray-400 dark:text-gray-600 text-center text-xs">
+        Fetching Threads...
+      </div>
+    );
+  }
 
   return (
     <>

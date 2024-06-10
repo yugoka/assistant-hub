@@ -61,11 +61,9 @@ export const getThreads = async ({
 // IDによるスレッド取得
 export interface GetThreadByIDOptions {
   threadID: string;
-  userID?: string;
 }
 export const getThreadByID = async ({
   threadID,
-  userID,
 }: GetThreadByIDOptions): Promise<Thread | null> => {
   if (!threadID) {
     throw new Error("Thread ID not specified");
@@ -73,15 +71,20 @@ export const getThreadByID = async ({
 
   const supabase = createClient();
 
-  let query = supabase.from("Threads").select("*").eq("id", threadID);
-  if (userID) {
-    query = query.eq("user_id", userID);
-  }
-
-  const { data, error } = await query.single();
+  const query = supabase
+    .from("Threads")
+    .select("*")
+    .eq("id", threadID)
+    .single();
+  const { data, error } = await query;
 
   if (error) {
-    throw error;
+    // 行が見つかりません / UUIDが不正
+    if (error.code === "PGRST116" || error.code === "22P02") {
+      return null;
+    } else {
+      throw error;
+    }
   }
 
   return data || null;

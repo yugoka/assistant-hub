@@ -27,27 +27,25 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
 // IDによるツール取得
 export interface GetToolByIDOptions {
   toolID: string;
-  userID?: string;
 }
 export const getToolByID = async ({
   toolID,
-  userID,
 }: GetToolByIDOptions): Promise<Tool | null> => {
   if (!toolID) {
     throw new Error("Tool ID not specified");
   }
 
   const supabase = createClient();
-
-  let query = supabase.from("Tools").select("*").eq("id", toolID);
-  if (userID) {
-    query = query.eq("user_id", userID);
-  }
-
-  const { data, error } = await query.single();
+  const query = supabase.from("Tools").select("*").eq("id", toolID).single();
+  const { data, error } = await query;
 
   if (error) {
-    throw error;
+    // 行が見つかりません / UUIDが不正
+    if (error.code === "PGRST116" || error.code === "22P02") {
+      return null;
+    } else {
+      throw error;
+    }
   }
 
   return data || null;

@@ -1,10 +1,8 @@
 "use client";
 import ErrorLarge from "@/components/common/ErrorLarge";
 import Loader from "@/components/common/Loader";
-import ToolOverview from "@/components/tools/ToolOverview";
 import ToolProviderWrapper from "@/contexts/ToolContext";
 import { Tool } from "@/types/Tool";
-import { createClient } from "@/utils/supabase/client";
 import { ReactNode } from "react";
 import { useQuery } from "react-query";
 
@@ -21,17 +19,8 @@ export default function ToolsLayout({ params, children }: Props) {
   const { data, isLoading, error, refetch } = useQuery<Tool, Error>(
     ["get-single-tool", toolID],
     async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("Tools")
-        .select()
-        .eq("id", toolID)
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
+      const res = await fetch(`/api/tools/${toolID}`);
+      const data = await res.json();
       return data as Tool;
     }
   );
