@@ -11,7 +11,11 @@ type Props = {
 export default function ChatLogBubble({ message, username }: Props) {
   return (
     <>
-      <div className={`flex ${message.role === "user" && "justify-end"}`}>
+      <div
+        className={`flex ${
+          message.role === "user" && "justify-end"
+        } animate-fade-in-fast`}
+      >
         <div className="max-w-[80%] space-y-0.">
           <div
             className={`${
@@ -27,7 +31,13 @@ export default function ChatLogBubble({ message, username }: Props) {
           </div>
 
           <div className="text-right text-xs text-gray-500 dark:text-gray-400 min-h-4">
-            {message?.created_at ? formatDate(message.created_at) : ""}
+            {message?.created_at ? (
+              <span className="animate-fade-in-fast">
+                {formatDate(message.created_at)}
+              </span>
+            ) : (
+              ""
+            )}
           </div>
         </div>
       </div>

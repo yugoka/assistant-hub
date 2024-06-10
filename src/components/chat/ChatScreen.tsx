@@ -75,7 +75,7 @@ export default function ChatScreen({ threadID }: Props) {
 
   // 自動スクロール
   useEffect(() => {
-    followBottom(80);
+    followBottom(100);
   }, [messages]);
 
   // 読み込み時に一度だけ最下部にスクロール
