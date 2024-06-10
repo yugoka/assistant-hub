@@ -5,17 +5,70 @@ import { useChat } from "@/hooks/useChat";
 import { useEffect, useRef } from "react";
 import ChatLogs from "./ChatLogs";
 import Loader from "../common/Loader";
+import { createClient } from "@/utils/supabase/client";
+import { Message } from "@/types/Message";
 
 type Props = {
   threadID: string | null | undefined;
 };
 
 export default function ChatScreen({ threadID }: Props) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      api: "/api/chat/",
-      threadID,
+  const supabase = createClient();
+
+  const {
+    messages,
+    setMessages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+  } = useChat({
+    api: "/api/chat/",
+    threadID,
+  });
+
+  const handleNewMessage = (newMessage: Message) => {
+    setMessages((messages) => {
+      const newMessageIndex = messages.findLastIndex(
+        (message) => message.id === newMessage.id
+      );
+      const newMessagesList = [...messages];
+
+      if (newMessageIndex === -1) {
+        newMessagesList.push(newMessage);
+        return newMessagesList;
+      } else {
+        newMessagesList[newMessageIndex] = newMessage;
+        return newMessagesList;
+      }
     });
+  };
+
+  const subscribeMessageChanges = () => {
+    // 変更を購読する
+    supabase
+      .channel("chat-messages")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "Messages",
+          filter: `thread_id=eq.${threadID}`,
+        },
+        (payload) => {
+          handleNewMessage(payload.new as Message);
+        }
+      )
+      .subscribe();
+  };
+
+  useEffect(() => {
+    subscribeMessageChanges();
+    return () => {
+      supabase.channel("chat-messages").unsubscribe();
+    };
+  }, [threadID]);
 
   const endOfMessages = useRef<HTMLDivElement>(null);
   const scrollContainer = useRef(null);
@@ -24,6 +77,13 @@ export default function ChatScreen({ threadID }: Props) {
   useEffect(() => {
     followBottom(80);
   }, [messages]);
+
+  // 読み込み時に一度だけ最下部にスクロール
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
+  }, [isLoading]);
 
   const scrollToBottom = () => {
     if (endOfMessages.current) {

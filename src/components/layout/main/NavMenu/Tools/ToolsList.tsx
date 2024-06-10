@@ -45,7 +45,6 @@ export default function ToolsList({ query }: Props) {
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {
-          console.log("payload:", payload);
           refetch();
         }
       )
@@ -56,7 +55,7 @@ export default function ToolsList({ query }: Props) {
     refetch();
     subscribeToolChanges();
     return () => {
-      supabase.channel("tool-list").unsubscribe();
+      supabase.channel("tools-list").unsubscribe();
     };
   }, [query]);
 

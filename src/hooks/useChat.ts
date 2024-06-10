@@ -1,11 +1,10 @@
-import { threadId } from "worker_threads";
 import { Message, MessageChunk } from "@/types/Message";
 import { AssistantAPIParam } from "@/types/api/Assistant";
 import { generateUUIDForMessage, parseMessageContent } from "@/utils/message";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { CreateThreadInput } from "@/services/threads";
 import { Thread } from "@/types/Thread";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 
@@ -14,34 +13,45 @@ interface UseChatProps {
   threadID: string | null | undefined;
 }
 
-export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
+export const useChat = ({ api, threadID }: UseChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
-  const [threadID, setThreadID] = useState<string | null | undefined>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const router = useRouter();
   const { user } = useUser();
 
+  const searchParams = useSearchParams();
+  const isNewThread = searchParams.get("new") === "true";
+
   // 読み込む
   useEffect(() => {
     (async () => {
-      if (defaultThreadID) {
-        if (threadID !== defaultThreadID) {
+      if (isNewThread) {
+        router.replace(`/chat?thread_id=${threadID}`);
+      } else {
+        if (threadID) {
           try {
             setIsLoading(true);
-            const messages = await getMessages(defaultThreadID);
+            const messages = await getMessages(threadID);
             setMessages(messages);
           } finally {
             setIsLoading(false);
           }
+        } else {
+          setMessages([]);
         }
-      } else {
-        setMessages([]);
       }
-      setThreadID(defaultThreadID);
     })();
-  }, [defaultThreadID]);
+  }, [threadID]);
+
+  const refetch = async () => {
+    if (threadID) {
+      console.log("fetch");
+      const messages = await getMessages(threadID);
+      setMessages(messages);
+    }
+  };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     setInput(event.target.value);
@@ -74,8 +84,7 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
     if (threadID) return threadID;
 
     const thread = await createThread(firstMessageContent, userID);
-    setThreadID(thread.id);
-    router.replace(`/chat?thread_id=${thread.id}`);
+    router.replace(`/chat?thread_id=${thread.id}&new=true`);
     return thread.id;
   };
 
@@ -136,10 +145,12 @@ export const useChat = ({ api, threadID: defaultThreadID }: UseChatProps) => {
 
   return {
     messages,
+    setMessages,
     input,
     handleInputChange,
     handleSubmit,
     isLoading,
+    refetch,
   };
 };
 

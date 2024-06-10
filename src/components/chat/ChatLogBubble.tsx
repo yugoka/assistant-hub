@@ -12,7 +12,7 @@ export default function ChatLogBubble({ message, username }: Props) {
   return (
     <>
       <div className={`flex ${message.role === "user" && "justify-end"}`}>
-        <div className="max-w-[80%] space-y-1">
+        <div className="max-w-[80%] space-y-0.">
           <div
             className={`${
               message.role === "user" && "text-right"
@@ -25,11 +25,10 @@ export default function ChatLogBubble({ message, username }: Props) {
               {parseMessageContent(message.content)}
             </ReactMarkdown>
           </div>
-          {message.created_at && (
-            <div className="text-right text-xs text-gray-500 dark:text-gray-400">
-              {formatDate(message.created_at)}
-            </div>
-          )}
+
+          <div className="text-right text-xs text-gray-500 dark:text-gray-400 min-h-4">
+            {message?.created_at ? formatDate(message.created_at) : ""}
+          </div>
         </div>
       </div>
     </>

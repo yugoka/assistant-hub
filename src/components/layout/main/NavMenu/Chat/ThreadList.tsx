@@ -43,7 +43,6 @@ export default function ThreadList({ query }: Props) {
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {
-          console.log("payload:", payload);
           refetch();
         }
       )
