@@ -130,8 +130,8 @@ export async function DELETE(
       );
     }
 
-    const result = await deleteTool({ id: params.tool_id });
-    const res = NextResponse.json(result, { status: 200 });
+    await deleteTool({ id: params.tool_id });
+    const res = NextResponse.json({ status: 200 });
     return res;
   } catch (error) {
     console.error("Error handling request:", error);

@@ -28,6 +28,39 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
 };
 
 // ==============
+// ツール取得
+// ==============
+export interface GetToolsOptions {
+  userId?: string;
+  page?: number;
+  pageSize?: number;
+}
+export const getTools = async ({
+  userId,
+  page,
+  pageSize = 10,
+}: GetToolsOptions): Promise<Tool[]> => {
+  const supabase = createClient();
+
+  let query = supabase.from("Tools").select("*").order("created_at");
+  if (userId) {
+    query = query.eq("user_id", userId);
+  }
+
+  if (page !== undefined) {
+    query = query.range((page - 1) * pageSize, page * pageSize - 1);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+};
+
+// ==============
 // IDによるツール取得
 // ==============
 export interface GetToolByIDOptions {

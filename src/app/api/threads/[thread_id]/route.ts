@@ -121,8 +121,8 @@ export async function DELETE(
       );
     }
 
-    const result = await deleteThread({ id: params.thread_id });
-    const res = NextResponse.json(result, { status: 200 });
+    await deleteThread({ id: params.thread_id });
+    const res = NextResponse.json({ status: 200 });
     return res;
   } catch (error) {
     console.error("Error handling request:", error);

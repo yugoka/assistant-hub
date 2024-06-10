@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import ToolsListItem from "./ToolsListItem";
 import { Tool } from "@/types/Tool";
 import { useEffect, useState } from "react";
+import { useQuery } from "react-query";
+import ErrorToast from "@/components/common/ErrorToast";
 
 type Props = {
   query: {
@@ -15,28 +17,20 @@ type Props = {
 
 export default function ToolsList({ query }: Props) {
   const supabase = createClient();
-  const [tools, setTools] = useState<Tool[]>([]);
   const searchParams = useSearchParams();
   const selectedToolID = searchParams.get("tool_id");
 
   const { user } = useUser();
 
-  const fetchTools = async () => {
-    let queryBuilder = supabase
-      .from("Tools")
-      .select()
-      .eq("user_id", user?.id)
-      .order("created_at");
-
-    if (query.nameLike) {
-      queryBuilder = queryBuilder.like("name", query.nameLike);
-    }
-
-    const result = await queryBuilder;
-    const tools = result.data;
-
-    setTools(tools || []);
-  };
+  const {
+    data: tools,
+    error,
+    refetch,
+  } = useQuery<Tool[], Error>(["get-thread-list", user?.id], async () => {
+    const res = await fetch(`/api/tools?user_id=${user?.id || ""}`);
+    const data = await res.json();
+    return data as Tool[];
+  });
 
   const subscribeToolChanges = () => {
     // 変更を購読する
@@ -52,19 +46,31 @@ export default function ToolsList({ query }: Props) {
         },
         (payload) => {
           console.log("payload:", payload);
-          fetchTools();
+          refetch();
         }
       )
       .subscribe();
   };
 
   useEffect(() => {
-    fetchTools();
+    refetch();
     subscribeToolChanges();
     return () => {
       supabase.channel("tool-list").unsubscribe();
     };
   }, [query]);
+
+  if (error) {
+    <ErrorToast />;
+  }
+
+  if (!tools) {
+    return (
+      <div className="pt-5 text-gray-400 dark:text-gray-600 text-center text-xs">
+        Fetching Tools...
+      </div>
+    );
+  }
 
   return (
     <>
