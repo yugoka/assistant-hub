@@ -6,8 +6,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CreateToolInput } from "@/services/tools";
+import { useRouter } from "next/navigation";
+import { Tool } from "@/types/Tool";
 
 export default function ToolsPage() {
+  const router = useRouter();
   const form = useForm<z.infer<typeof toolEditorFormSchema>>({
     resolver: zodResolver(toolEditorFormSchema),
     defaultValues: {
@@ -33,6 +36,9 @@ export default function ToolsPage() {
       if (!res.ok) {
         throw new Error("HTTP Error");
       }
+      const newTool = (await res.json()) as Tool;
+      console.log(newTool);
+      router.push(`/tools/${newTool.id}`);
     } catch (e) {
       console.error(e);
     }

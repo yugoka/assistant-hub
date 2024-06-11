@@ -1,26 +1,23 @@
-import { Thread } from "@/types/Thread";
+import { Apikey, ApikeyMode } from "@/types/ApiKey";
 import { createClient } from "@/utils/supabase/server";
 
 // ==============
-// スレッド作成
+// APIキー作成
 // ==============
-export interface CreateThreadInput {
-  id?: string;
+export interface CreateApikeyInput {
   name: string;
-  user_id: string;
+  mode: ApikeyMode;
 }
-export const createThread = async (
-  input: CreateThreadInput
-): Promise<Thread> => {
+export const createApikey = async (
+  input: CreateApikeyInput
+): Promise<Apikey> => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Threads")
+    .from("apikeys")
     .insert([input])
     .select("*")
     .single();
-
-  console.log(data);
 
   if (error) {
     throw error;
@@ -30,22 +27,22 @@ export const createThread = async (
 };
 
 // ==============
-// スレッド取得
+// APIキー取得
 // ==============
-export interface GetThreadsOptions {
+export interface GetApikeysOptions {
   userId?: string;
   page?: number;
   pageSize?: number;
 }
-export const getThreads = async ({
+export const getApikeys = async ({
   userId,
   page,
   pageSize = 10,
-}: GetThreadsOptions): Promise<Thread[]> => {
+}: GetApikeysOptions): Promise<Apikey[]> => {
   const supabase = createClient();
 
   let query = supabase
-    .from("Threads")
+    .from("apikeys")
     .select("*")
     .order("created_at", { ascending: false });
   if (userId) {
@@ -66,25 +63,20 @@ export const getThreads = async ({
 };
 
 // ==============
-// IDによるスレッド取得
+// IDによるAPIキー取得
 // ==============
-export interface GetThreadByIDOptions {
-  threadID: string;
+export interface GetApikeyByIDOptions {
+  id: number;
 }
-export const getThreadByID = async ({
-  threadID,
-}: GetThreadByIDOptions): Promise<Thread | null> => {
-  if (!threadID) {
-    throw new Error("Thread ID not specified");
+export const getApikeyByID = async ({
+  id,
+}: GetApikeyByIDOptions): Promise<Apikey | null> => {
+  if (!id) {
+    throw new Error("ApiKey ID not specified");
   }
 
   const supabase = createClient();
-
-  const query = supabase
-    .from("Threads")
-    .select("*")
-    .eq("id", threadID)
-    .single();
+  const query = supabase.from("apikeys").select("*").eq("id", id).single();
   const { data, error } = await query;
 
   if (error) {
@@ -100,20 +92,21 @@ export const getThreadByID = async ({
 };
 
 // ==============
-// スレッド更新
+// APIキー更新
 // ==============
-export interface UpdateThreadInput {
-  id: string;
+export interface UpdateApikeyInput {
+  id: number;
   name?: string;
+  mode?: ApikeyMode;
 }
-export const updateThread = async (input: UpdateThreadInput) => {
+export const updateApikey = async (input: UpdateApikeyInput) => {
   if (!input.id) {
-    throw new Error("Thread ID not specified");
+    throw new Error("Apikey ID not specified");
   }
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Threads")
+    .from("apikeys")
     .update({ ...input, id: undefined })
     .eq("id", input.id)
     .select()
@@ -121,22 +114,24 @@ export const updateThread = async (input: UpdateThreadInput) => {
 
   if (error) throw error;
 
-  return data as Thread;
+  return data as Apikey;
 };
 
 // ==============
-// スレッド削除
+// APIキー削除
 // ==============
-export interface DeleteThreadInput {
-  id: string;
+export interface DeleteApikeyInput {
+  id: number;
+  name?: string;
+  mode?: ApikeyMode;
 }
-export const deleteThread = async (input: DeleteThreadInput) => {
+export const deleteApikey = async (input: DeleteApikeyInput) => {
   if (!input.id) {
-    throw new Error("Thread ID not specified");
+    throw new Error("Apikey ID not specified");
   }
   const supabase = createClient();
 
-  const { error } = await supabase.from("Threads").delete().eq("id", input.id);
+  const { error } = await supabase.from("apikeys").delete().eq("id", input.id);
 
   if (error) throw error;
 

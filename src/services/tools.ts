@@ -42,7 +42,10 @@ export const getTools = async ({
 }: GetToolsOptions): Promise<Tool[]> => {
   const supabase = createClient();
 
-  let query = supabase.from("Tools").select("*").order("created_at");
+  let query = supabase
+    .from("Tools")
+    .select("*")
+    .order("created_at", { ascending: false });
   if (userId) {
     query = query.eq("user_id", userId);
   }
