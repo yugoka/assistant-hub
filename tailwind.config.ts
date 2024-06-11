@@ -66,7 +66,7 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        fadeIn: {
+        "fade-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
@@ -74,7 +74,7 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in-fast": "fadeIn 0.15s ease-in-out",
+        "fade-in-fast": "fade-in 0.15s ease-in-out",
       },
     },
   },

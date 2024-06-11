@@ -23,16 +23,11 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={GeistSans.className}>
+    <html lang="en" className={`${GeistSans.className} overflow-hidden`}>
       <body
-        className={cn(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable
-        )}
+        className={cn("bg-background font-sans antialiased", fontSans.variable)}
       >
-        <main className="min-h-screen flex flex-col items-center">
-          {children}
-        </main>
+        <main className="h-screen flex flex-col items-center">{children}</main>
       </body>
     </html>
   );
