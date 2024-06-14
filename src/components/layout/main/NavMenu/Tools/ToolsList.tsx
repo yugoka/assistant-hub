@@ -2,10 +2,9 @@
 
 import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/contexts/UserContext";
-import { useSearchParams } from "next/navigation";
 import ToolsListItem from "./ToolsListItem";
 import { Tool } from "@/types/Tool";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "react-query";
 import ErrorToast from "@/components/common/ErrorToast";
 
@@ -17,8 +16,8 @@ type Props = {
 
 export default function ToolsList({ query }: Props) {
   const supabase = createClient();
-  const searchParams = useSearchParams();
-  const selectedToolID = searchParams.get("tool_id");
+  const match = window.location.pathname.match(/tools\/([^\/]+)/);
+  const selectedToolID = match ? match[0].replace("tools/", "") : null;
 
   const { user } = useUser();
 
