@@ -97,7 +97,7 @@ export const runResponderAgent = async ({
   const readableStream = new ReadableStream<string>({
     async start(controller) {
       while (steps <= MAX_TOOLCALL_STEPS) {
-        console.log("Step:", steps);
+        console.log("Step:", steps, ", Messages:", messages.length);
 
         let newChunkObject = {} as ChatCompletionChunk;
 

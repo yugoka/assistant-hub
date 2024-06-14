@@ -62,6 +62,7 @@ export const getMessagesByThreadID = async ({
 
   // フロントで読める形にパースし直す
   const parsedMessage = data.map((message) => parseDBMessage(message));
+
   return parsedMessage || [];
 };
 

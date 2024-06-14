@@ -1,7 +1,7 @@
 import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
 import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
 import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
-import { NextFetchEvent, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 //============
 // 外部用API
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
     }
 
     const messages = await getMessagesFromAssistantAPIParams(params);
-    console.log("input message length:", messages.length);
     const responderAgentParams: ResponderAgentParam = {
       ...params,
       messages,

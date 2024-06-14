@@ -38,6 +38,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
+
     const threadID = url.searchParams.get("thread_id");
     const userID = url.searchParams.get("user_id");
 
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
       return new Response(
         JSON.stringify({ error: "Neither thread_id nor user_id specified" }),
         {
-          status: 500,
+          status: 400,
           headers: {
             "Content-Type": "application/json",
           },
