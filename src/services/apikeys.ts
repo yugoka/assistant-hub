@@ -1,5 +1,6 @@
 import { Apikey, ApikeyMode } from "@/types/ApiKey";
 import { createClient } from "@/utils/supabase/server";
+import { v4 as uuidv4 } from "uuid";
 
 // ==============
 // APIキー作成
@@ -10,20 +11,33 @@ export interface CreateApikeyInput {
 }
 export const createApikey = async (
   input: CreateApikeyInput
-): Promise<Apikey> => {
+): Promise<{ newColumn: Apikey; key: string }> => {
   const supabase = createClient();
+
+  const newKey = uuidv4();
+
+  console.log(newKey, input);
 
   const { data, error } = await supabase
     .from("apikeys")
-    .insert([input])
-    .select("*")
+    .insert([
+      {
+        ...input,
+        // 送られた生のキーはSupabase側でハッシュ化される
+        hashed_key: newKey,
+      },
+    ])
+    .select("id, name, user_id, mode, created_at")
     .single();
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return {
+    newColumn: data,
+    key: newKey,
+  };
 };
 
 // ==============
@@ -43,7 +57,7 @@ export const getApikeys = async ({
 
   let query = supabase
     .from("apikeys")
-    .select("*")
+    .select("id, name, user_id, mode, created_at")
     .order("created_at", { ascending: false });
   if (userId) {
     query = query.eq("user_id", userId);
@@ -76,7 +90,11 @@ export const getApikeyByID = async ({
   }
 
   const supabase = createClient();
-  const query = supabase.from("apikeys").select("*").eq("id", id).single();
+  const query = supabase
+    .from("apikeys")
+    .select("id, name, user_id, mode, created_at")
+    .eq("id", id)
+    .single();
   const { data, error } = await query;
 
   if (error) {

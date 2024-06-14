@@ -1,12 +1,12 @@
 import { Message, MessageChunk } from "@/types/Message";
 import { AssistantAPIParam } from "@/types/api/Assistant";
-import { generateUUIDForMessage, parseMessageContent } from "@/utils/message";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { CreateThreadInput } from "@/services/threads";
 import { Thread } from "@/types/Thread";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface UseChatProps {
   api: string;
@@ -89,7 +89,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   };
 
   const createUserMessage = (content: string, threadID: string): Message => ({
-    id: generateUUIDForMessage(),
+    id: uuidv4(),
     role: "user",
     content,
     thread_id: threadID,

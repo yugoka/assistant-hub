@@ -1,18 +1,8 @@
 "use client";
 
-import { Dispatch, ReactNode, SetStateAction, useState } from "react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dispatch, SetStateAction, useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { UserSettings } from "@/types/UserSettings";
 import APIKeySettingsTab from "./APIKey/APIKeySettingsTab";
 import UserSettingsTab from "./UserSettings/UserSettingsTab";
@@ -35,7 +25,7 @@ export default function SetttingsDialog({
       open={isSettingsMenuOpen}
       onOpenChange={(isOpen) => setIsSettingsMenuOpen(isOpen)}
     >
-      <DialogContent className="h-full w-svw sm:h-[500px] sm:max-w-[600px] pt-0">
+      <DialogContent className="h-full w-svw max-w-none sm:max-h-[500px] sm:w-[700px] sm:max-w-[600px] pt-0">
         <div className="flex flex-col">
           <Tabs
             defaultValue="user-settings"
@@ -62,13 +52,6 @@ export default function SetttingsDialog({
             </TabsContent>
           </Tabs>
         </div>
-
-        {/**
-         * 
-        <DialogFooter>
-          <Button type="submit">Save</Button>
-        </DialogFooter>
-         */}
       </DialogContent>
     </Dialog>
   );

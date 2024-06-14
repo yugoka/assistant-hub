@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "latest",
     "@vercel/functions": "^1.0.2",
     "ai": "^3.1.5",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "geist": "^1.2.1",
@@ -47,5 +48,10 @@
     "encoding": "^0.1.13",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3"
+  },
+  "browser": {
+    "fs": false,
+    "os": false,
+    "path": false
   }
 }

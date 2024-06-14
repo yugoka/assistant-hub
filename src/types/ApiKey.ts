@@ -1,4 +1,5 @@
-export type ApikeyMode = "read" | "write" | "all";
+export const apikeyModes: [string, ...string[]] = ["read", "write", "all"];
+export type ApikeyMode = (typeof apikeyModes)[number];
 
 export type Apikey = {
   id: number;
@@ -6,4 +7,5 @@ export type Apikey = {
   name: string;
   mode: ApikeyMode;
   hashedKey?: string;
+  created_at: string;
 };
