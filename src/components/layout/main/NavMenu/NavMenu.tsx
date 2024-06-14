@@ -83,7 +83,7 @@ export default function NavMenu() {
         <div>
           <Button
             variant="ghost"
-            className="mb-1 mx-1 flex text-gray-600 dark:text-gray-500 hover:text-gray-500 transition-colors flex-shrink-0"
+            className="mb-2 mx-2 flex text-gray-600 dark:text-gray-500 hover:text-gray-500 transition-colors flex-shrink-0"
             onClick={() => setIsSettingsMenuOpen(true)}
           >
             <SettingsIcon className="w-5 h-5 mr-2" />

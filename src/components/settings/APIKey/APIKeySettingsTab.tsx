@@ -12,9 +12,15 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ApikeyEditor from "./ApiKeyEditor";
 import { CreateApikeyInput, UpdateApikeyInput } from "@/services/apikeys";
+import GeneratedAPIKeyDialogue from "./GeneratedAPIKeyDialogue";
 
 export default function APIKeySettingsTab() {
   const [isApikeyEditorOpen, setIsAPikeyEditorOpen] = useState<boolean>(false);
+
+  const [isGeneratedKeyDialogueOpen, setIsGeneratedKeyDialogueOpen] =
+    useState<boolean>(false);
+  const [generatedKey, setGeneratedKey] = useState<string>("");
+
   const form = useForm<z.infer<typeof apikeyEditorFormSchema>>({
     resolver: zodResolver(apikeyEditorFormSchema),
     defaultValues: newApikeyDefaultValues,
@@ -76,7 +82,14 @@ export default function APIKeySettingsTab() {
         if (!result.ok) throw new Error("HTTP Error!");
 
         const { key }: { key: string } = await result.json();
-        console.log(key);
+
+        if (key) {
+          setGeneratedKey(key);
+          setIsGeneratedKeyDialogueOpen(true);
+          console.log(key);
+        } else {
+          throw new Error("API key has not been returned");
+        }
 
         // 更新
       } else if (values.formMode === "edit") {
@@ -100,6 +113,14 @@ export default function APIKeySettingsTab() {
       refetch();
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleToggleGeneratedKeyDialogue = (open: boolean) => {
+    setIsGeneratedKeyDialogueOpen(open);
+    // セキュリティ対策のためにデータを残さない
+    if (!open) {
+      setGeneratedKey("");
     }
   };
 
@@ -136,6 +157,13 @@ export default function APIKeySettingsTab() {
         setOpen={setIsAPikeyEditorOpen}
         onSubmit={handleSubmitApikeyEditor}
       />
+      {isGeneratedKeyDialogueOpen && (
+        <GeneratedAPIKeyDialogue
+          open={isGeneratedKeyDialogueOpen}
+          setOpen={handleToggleGeneratedKeyDialogue}
+          apikey={generatedKey}
+        />
+      )}
     </div>
   );
 }

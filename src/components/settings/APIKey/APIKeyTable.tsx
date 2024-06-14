@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Apikey } from "@/types/ApiKey";
 import { FilePenIcon, TrashIcon } from "lucide-react";
+import APIKeyTableRow from "./APIKeyTableRow";
 
 type Props = {
   apiKeys: Apikey[];
@@ -37,32 +38,12 @@ export default function APIKeyTable({ apiKeys, onDelete, onEdit }: Props) {
 
         <TableBody className="max-h-56">
           {apiKeys.map((apikey) => (
-            <TableRow key={apikey.id}>
-              <TableCell className="font-medium">{apikey.name}</TableCell>
-              <TableCell>{apiKeyModeDisplayName[apikey.mode]}</TableCell>
-              <TableCell>{formatDate(apikey.created_at)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => onEdit(apikey)}
-                  >
-                    <FilePenIcon className="h-4 w-4" />
-                    <span className="sr-only">Edit API key</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="text-red-500"
-                    onClick={() => onDelete(apikey)}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    <span className="sr-only">Delete API key</span>
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
+            <APIKeyTableRow
+              key={apikey.id}
+              apikey={apikey}
+              onDelete={onDelete}
+              onEdit={onEdit}
+            />
           ))}
         </TableBody>
       </Table>

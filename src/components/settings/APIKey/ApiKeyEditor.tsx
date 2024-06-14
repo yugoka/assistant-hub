@@ -18,7 +18,6 @@ import { UseFormReturn } from "react-hook-form";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -49,9 +48,16 @@ type Props = {
 export default function ApikeyEditor({ open, setOpen, form, onSubmit }: Props) {
   return (
     <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
-          <DialogTitle>Create API Key</DialogTitle>
+          <DialogTitle>
+            {form.getValues().formMode === "create"
+              ? "Create API Key"
+              : "Edit API Key"}
+          </DialogTitle>
           <DialogDescription>
             Configure your new API key with the desired permissions.
           </DialogDescription>
