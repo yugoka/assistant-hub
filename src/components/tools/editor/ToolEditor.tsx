@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/form";
 import { authTypes } from "@/types/Tool";
 import Link from "next/link";
-import { PencilIcon } from "lucide-react";
+import { Loader2, PencilIcon } from "lucide-react";
 import InstructionExamples from "./InstructionExamples";
+import { useState } from "react";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
@@ -88,10 +89,15 @@ type Props = {
 };
 
 export default function ToolEditor({ form, onSubmit, variant }: Props) {
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={(e) => {
+          form.handleSubmit(onSubmit)(e);
+          setIsSaving(true);
+        }}
         className="flex justify-center"
       >
         <Card className="w-full max-w-4xl md:m-3 border-none shadow-none">
@@ -228,7 +234,16 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
             <InstructionExamples form={form} />
           </CardContent>
           <CardFooter className="justify-end">
-            <Button type="submit">Save</Button>
+            <Button disabled={isSaving} type="submit">
+              {isSaving ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4 mr-1" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
           </CardFooter>
         </Card>
       </form>

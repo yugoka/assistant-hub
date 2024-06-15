@@ -16,16 +16,49 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { fetchGenerationTask } from "@/utils/generationTask";
+import { useState } from "react";
+import { getInstructionExampleGenerationPrompt } from "@/prompts/instructionExamplesGenerationPrompt";
 
 type InstructionExamplesProps = {
   form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
 };
 
 function InstructionExamples({ form }: InstructionExamplesProps) {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: "instruction_examples",
   });
+
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // AIによる使用例生成
+  const generateExample = async (index: number) => {
+    try {
+      setIsGenerating(true);
+      const values = form.getValues();
+      const prompt = getInstructionExampleGenerationPrompt({
+        name: values.name,
+        description: values.description,
+        schema: values.schema,
+        instructions: values.instruction_examples.map(
+          (instruction) => instruction.text
+        ),
+      });
+      const response = fetchGenerationTask({
+        messages: [{ role: "user", content: prompt }],
+        model: "gpt-4o",
+      });
+
+      let text = "";
+      for await (const chunk of response) {
+        text += chunk;
+        update(index, { text });
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="grid gap-4 mt-4">
@@ -54,6 +87,7 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
         <FormItem key={field.id} className="grid gap-1">
           <>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-">{index + 1}. </span>
               <FormControl>
                 <Input
                   {...form.register(`instruction_examples.${index}.text`)}
@@ -64,9 +98,11 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    type="button"
+                    disabled={isGenerating}
                     variant="ghost"
                     size="icon"
-                    onClick={() => remove(index)}
+                    onClick={(e) => generateExample(index)}
                   >
                     <BotIcon className="w-4 h-4" />
                     <span className="sr-only">Generate with ChatGPT</span>
@@ -105,7 +141,11 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
         </FormItem>
       ))}
       <div>
-        <Button className="p-3 h-9" onClick={() => append({ text: "" })}>
+        <Button
+          className="p-3 h-9"
+          disabled={fields.length >= 5}
+          onClick={() => append({ text: "" })}
+        >
           <PlusIcon className="w-4 h-4 mr-2" />
           Add
         </Button>

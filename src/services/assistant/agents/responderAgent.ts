@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const mockTools = [
   {
@@ -57,15 +58,13 @@ export const fetchResponderAgentResponse = async (
   messages: ChatCompletionMessageParam[],
   steps: number
 ) => {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
   const tools =
     steps < MAX_TOOLCALL_STEPS
       ? (mockTools as ChatCompletionCreateParamsBase["tools"])
       : undefined;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
     stream: true,
     messages,
     tools,
