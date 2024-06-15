@@ -10,6 +10,7 @@ export interface CreateToolInput {
   schema: string;
   auth_type: AuthType;
   credential?: string;
+  instruction_examples: string[];
 }
 export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   const supabase = createClient();
@@ -17,7 +18,22 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   const { data, error } = await supabase
     .from("tools")
     .insert([input])
-    .select("*")
+    .select(
+      `
+      id,
+      name,
+      description,
+      schema,
+      created_at,
+      user_id,
+      execution_count,
+      average_execution_time,
+      credential,
+      auth_type,
+      success_count,
+      instruction_examples
+    `
+    )
     .single();
 
   if (error) {
@@ -44,7 +60,22 @@ export const getTools = async ({
 
   let query = supabase
     .from("tools")
-    .select("*")
+    .select(
+      `
+      id,
+      name,
+      description,
+      schema,
+      created_at,
+      user_id,
+      execution_count,
+      average_execution_time,
+      credential,
+      auth_type,
+      success_count,
+      instruction_examples
+    `
+    )
     .order("created_at", { ascending: false });
   if (userId) {
     query = query.eq("user_id", userId);
@@ -77,7 +108,26 @@ export const getToolByID = async ({
   }
 
   const supabase = createClient();
-  const query = supabase.from("tools").select("*").eq("id", toolID).single();
+  const query = supabase
+    .from("tools")
+    .select(
+      `
+    id,
+    name,
+    description,
+    schema,
+    created_at,
+    user_id,
+    execution_count,
+    average_execution_time,
+    credential,
+    auth_type,
+    success_count,
+    instruction_examples
+  `
+    )
+    .eq("id", toolID)
+    .single();
   const { data, error } = await query;
 
   if (error) {
@@ -105,6 +155,7 @@ export interface UpdateToolInput {
   execution_count?: number;
   average_execution_time?: number;
   success_count?: number;
+  instruction_examples: string[];
 }
 export const updateTool = async (input: UpdateToolInput) => {
   if (!input.id) {
@@ -116,7 +167,22 @@ export const updateTool = async (input: UpdateToolInput) => {
     .from("tools")
     .update({ ...input, id: undefined })
     .eq("id", input.id)
-    .select()
+    .select(
+      `
+      id,
+      name,
+      description,
+      schema,
+      created_at,
+      user_id,
+      execution_count,
+      average_execution_time,
+      credential,
+      auth_type,
+      success_count,
+      instruction_examples
+    `
+    )
     .single();
 
   if (error) throw error;

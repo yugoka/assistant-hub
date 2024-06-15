@@ -1,7 +1,7 @@
 "use client";
 import ToolEditor, {
   toolEditorFormSchema,
-} from "@/components/tools/ToolEditor";
+} from "@/components/tools/editor/ToolEditor";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,9 @@ export default function ToolsPage() {
     try {
       const reqBody: CreateToolInput = {
         ...values,
+        instruction_examples: values.instruction_examples.map(
+          (instruction) => instruction.text
+        ),
       };
 
       const res = await fetch("/api/tools", {

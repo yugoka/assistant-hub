@@ -12,5 +12,6 @@ export type Tool = {
   execution_count: number;
   average_execution_time: number;
   success_count: number;
+  instruction_examples: string[];
   created_at: string;
 };

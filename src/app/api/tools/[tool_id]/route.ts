@@ -94,6 +94,7 @@ export async function PUT(
       execution_count: reqBody.execution_count,
       average_execution_time: reqBody.average_execution_time,
       success_count: reqBody.success_count,
+      instruction_examples: reqBody.instruction_examples,
     };
 
     const result = await updateTool(updateParams);

@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       schema: reqBody.schema,
       auth_type: reqBody.auth_type,
       credential: reqBody.credential,
+      instruction_examples: reqBody.instruction_examples,
     };
 
     const result = await createTool(params);

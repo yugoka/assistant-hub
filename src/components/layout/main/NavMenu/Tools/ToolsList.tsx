@@ -16,7 +16,9 @@ type Props = {
 
 export default function ToolsList({ query }: Props) {
   const supabase = createClient();
-  const match = window.location.pathname.match(/tools\/([^\/]+)/);
+  const match =
+    typeof window !== "undefined" &&
+    window.location.pathname.match(/tools\/([^\/]+)/);
   const selectedToolID = match ? match[0].replace("tools/", "") : null;
 
   const { user } = useUser();

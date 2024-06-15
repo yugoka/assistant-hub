@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { ToolIcon } from "@/components/common/icons/ToolIcon";
 import { z } from "zod";
 import { UseFormReturn, useForm } from "react-hook-form";
 import {
@@ -27,6 +26,7 @@ import {
 import { authTypes } from "@/types/Tool";
 import Link from "next/link";
 import { PencilIcon } from "lucide-react";
+import InstructionExamples from "./InstructionExamples";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
@@ -68,6 +68,17 @@ export const toolEditorFormSchema = z.object({
   execution_count: z.number().optional(),
   success_count: z.number().optional(),
   average_execution_time: z.number().optional(),
+  instruction_examples: z
+    .array(
+      z.object({
+        text: z.string().min(2, {
+          message: "Instruction example must be at least 2 characters.",
+        }),
+      })
+    )
+    .min(1, {
+      message: "At least one instruction example is necessary.",
+    }),
 });
 
 type Props = {
@@ -212,6 +223,9 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
                 </FormItem>
               )}
             />
+
+            {/* Instruction Examples */}
+            <InstructionExamples form={form} />
           </CardContent>
           <CardFooter className="justify-end">
             <Button type="submit">Save</Button>

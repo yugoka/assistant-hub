@@ -2,8 +2,9 @@
 import Loader from "@/components/common/Loader";
 import ToolEditor, {
   toolEditorFormSchema,
-} from "@/components/tools/ToolEditor";
+} from "@/components/tools/editor/ToolEditor";
 import { useTool } from "@/contexts/ToolContext";
+import { UpdateToolInput } from "@/services/tools";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -21,20 +22,34 @@ export default function ToolsEditPage() {
     resolver: zodResolver(toolEditorFormSchema),
     defaultValues: {
       ...tool,
+      instruction_examples: tool.instruction_examples.map((instructionText) => {
+        return { text: instructionText };
+      }),
     },
   });
 
   const onSubmit = async (values: z.infer<typeof toolEditorFormSchema>) => {
     try {
+      if (!values.id) {
+        throw new Error("Tool ID not specified");
+      }
+
+      const reqBody: UpdateToolInput = {
+        ...values,
+        // 型エラーを出さないために明示的に指定
+        id: values.id,
+        instruction_examples: values.instruction_examples.map(
+          (instruction) => instruction.text
+        ),
+      };
+
       const url = `/api/tools/${values.id}`;
       const options = {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...values,
-        }),
+        body: JSON.stringify(reqBody),
       };
 
       const response = await fetch(url, options);
