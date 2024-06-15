@@ -15,7 +15,7 @@ export const createThread = async (
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Threads")
+    .from("threads")
     .insert([input])
     .select("*")
     .single();
@@ -45,7 +45,7 @@ export const getThreads = async ({
   const supabase = createClient();
 
   let query = supabase
-    .from("Threads")
+    .from("threads")
     .select("*")
     .order("created_at", { ascending: false });
   if (userId) {
@@ -81,7 +81,7 @@ export const getThreadByID = async ({
   const supabase = createClient();
 
   const query = supabase
-    .from("Threads")
+    .from("threads")
     .select("*")
     .eq("id", threadID)
     .single();
@@ -113,7 +113,7 @@ export const updateThread = async (input: UpdateThreadInput) => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Threads")
+    .from("threads")
     .update({ ...input, id: undefined })
     .eq("id", input.id)
     .select()
@@ -136,7 +136,7 @@ export const deleteThread = async (input: DeleteThreadInput) => {
   }
   const supabase = createClient();
 
-  const { error } = await supabase.from("Threads").delete().eq("id", input.id);
+  const { error } = await supabase.from("threads").delete().eq("id", input.id);
 
   if (error) throw error;
 

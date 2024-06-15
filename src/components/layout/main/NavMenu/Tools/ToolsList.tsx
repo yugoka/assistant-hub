@@ -40,7 +40,7 @@ export default function ToolsList({ query }: Props) {
         {
           event: "*",
           schema: "public",
-          table: "Tools",
+          table: "tools",
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {

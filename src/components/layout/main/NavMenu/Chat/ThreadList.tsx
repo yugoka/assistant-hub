@@ -39,7 +39,7 @@ export default function ThreadList({ query }: Props) {
         {
           event: "*",
           schema: "public",
-          table: "Threads",
+          table: "threads",
           filter: `user_id=eq.${user?.id}`,
         },
         (payload) => {

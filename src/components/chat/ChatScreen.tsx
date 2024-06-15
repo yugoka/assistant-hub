@@ -53,7 +53,7 @@ export default function ChatScreen({ threadID }: Props) {
         {
           event: "*",
           schema: "public",
-          table: "Messages",
+          table: "messages",
           filter: `thread_id=eq.${threadID}`,
         },
         (payload) => {

@@ -12,7 +12,7 @@ export const createMessage = async (newMessage: Message): Promise<Message> => {
   const input: MessageForDB = convertMessageForDB(newMessage);
 
   const { data, error } = await supabase
-    .from("Messages")
+    .from("messages")
     .insert([input])
     .select("*")
     .single();
@@ -45,7 +45,7 @@ export const getMessagesByThreadID = async ({
   const supabase = createClient();
 
   let query = supabase
-    .from("Messages")
+    .from("messages")
     .select("*")
     .eq("thread_id", threadID)
     .order("created_at");

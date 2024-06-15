@@ -15,7 +15,7 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Tools")
+    .from("tools")
     .insert([input])
     .select("*")
     .single();
@@ -43,7 +43,7 @@ export const getTools = async ({
   const supabase = createClient();
 
   let query = supabase
-    .from("Tools")
+    .from("tools")
     .select("*")
     .order("created_at", { ascending: false });
   if (userId) {
@@ -77,7 +77,7 @@ export const getToolByID = async ({
   }
 
   const supabase = createClient();
-  const query = supabase.from("Tools").select("*").eq("id", toolID).single();
+  const query = supabase.from("tools").select("*").eq("id", toolID).single();
   const { data, error } = await query;
 
   if (error) {
@@ -113,7 +113,7 @@ export const updateTool = async (input: UpdateToolInput) => {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("Tools")
+    .from("tools")
     .update({ ...input, id: undefined })
     .eq("id", input.id)
     .select()
@@ -136,7 +136,7 @@ export const deleteTool = async (input: DeleteToolInput) => {
   }
   const supabase = createClient();
 
-  const { error } = await supabase.from("Tools").delete().eq("id", input.id);
+  const { error } = await supabase.from("tools").delete().eq("id", input.id);
 
   if (error) throw error;
 
