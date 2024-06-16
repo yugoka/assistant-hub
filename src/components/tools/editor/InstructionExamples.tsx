@@ -116,6 +116,7 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
@@ -129,7 +130,7 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
               </Tooltip>
             </div>
             {form.formState.errors.instruction_examples?.[index]?.text &&
-              form.formState.submitCount > 1 && (
+              form.formState.submitCount > 0 && (
                 <FormMessage>
                   {
                     form.formState.errors.instruction_examples[index]?.text
@@ -142,6 +143,7 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
       ))}
       <div>
         <Button
+          type="button"
           className="p-3 h-9"
           disabled={fields.length >= 5}
           onClick={() => append({ text: "" })}

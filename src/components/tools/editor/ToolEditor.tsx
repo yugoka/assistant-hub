@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { z } from "zod";
 import { UseFormReturn, useForm } from "react-hook-form";
 import {
@@ -27,7 +27,7 @@ import { authTypes } from "@/types/Tool";
 import Link from "next/link";
 import { Loader2, PencilIcon } from "lucide-react";
 import InstructionExamples from "./InstructionExamples";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
@@ -84,22 +84,25 @@ export const toolEditorFormSchema = z.object({
 
 type Props = {
   form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
-  onSubmit: (values: z.infer<typeof toolEditorFormSchema>) => void;
+  onSubmit: (values: z.infer<typeof toolEditorFormSchema>) => Promise<void>;
   variant: "create" | "edit";
 };
 
 export default function ToolEditor({ form, onSubmit, variant }: Props) {
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    try {
+      setIsSaving(true);
+      await form.handleSubmit(onSubmit)(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form
-        onSubmit={(e) => {
-          form.handleSubmit(onSubmit)(e);
-          setIsSaving(true);
-        }}
-        className="flex justify-center"
-      >
+      <form onSubmit={handleSubmit} className="flex justify-center">
         <Card className="w-full max-w-4xl md:m-3 border-none shadow-none">
           <CardHeader>
             <CardTitle className="flex justify-between items-center">
@@ -107,8 +110,11 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
                 <PencilIcon className="inline-block mr-2 h-6 pb-1" />
                 {variant === "create" ? "New" : "Edit"} Tool
               </span>
-              <Link href={`/tools/${form.getValues().id || ""}`}>
-                <Button variant="outline">Back</Button>
+              <Link
+                className={buttonVariants({ variant: "outline" })}
+                href={`/tools/${form.getValues().id || ""}`}
+              >
+                Back
               </Link>
             </CardTitle>
             <CardDescription>Update the details of your API.</CardDescription>
