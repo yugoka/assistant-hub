@@ -6,8 +6,8 @@ export type AssistantAPIParam = {
   messages?: Message[];
   content?: string;
   save?: boolean;
-  page?: number;
-  pageSize?: number;
+  maxToolCallSteps?: number;
+  model?: string;
 };
 
 export type ResponderAgentParam = AssistantAPIParam & {

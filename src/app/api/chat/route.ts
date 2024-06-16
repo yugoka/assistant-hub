@@ -1,4 +1,4 @@
-import { runResponderAgent } from "@/services/assistant/agents/responderAgent";
+import ResponderAgent from "@/services/assistant/agents/ResponderAgent";
 import { getMessagesFromAssistantAPIParams } from "@/services/assistant/apiUtils";
 import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
 import { NextRequest } from "next/server";
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
       messages,
     };
 
-    const responseStream = await runResponderAgent(responderAgentParams);
+    const agent = new ResponderAgent(responderAgentParams);
+    const responseStream = await agent.run();
     const modifiedStream = await modifyStreamForWebChat(responseStream);
 
     // ストリームをそのままレスポンスとして返す

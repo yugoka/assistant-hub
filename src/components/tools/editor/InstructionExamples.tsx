@@ -119,7 +119,7 @@ function InstructionExamples({ form }: InstructionExamplesProps) {
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
-                    disabled={fields.length <= 1}
+                    disabled={fields.length <= 1 || isGenerating}
                   >
                     <TrashIcon className="w-4 h-4" />
                     <span className="sr-only">Remove</span>
