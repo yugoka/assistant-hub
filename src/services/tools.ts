@@ -1,5 +1,7 @@
 import { AuthType, Tool } from "@/types/Tool";
 import { createClient } from "@/utils/supabase/server";
+import { getAndAverageEmbeddings } from "./embeddings";
+import InstructionExamples from "@/components/tools/editor/InstructionExamples";
 
 // ==============
 // ツール作成
@@ -15,9 +17,19 @@ export interface CreateToolInput {
 export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   const supabase = createClient();
 
+  // 使用例をベクトル化する
+  const instructionExamplesEmbedding = await getAndAverageEmbeddings(
+    input.instruction_examples
+  );
+
+  const processedInput: { [key: string]: any } = {
+    ...input,
+    instruction_examples_embedding: instructionExamplesEmbedding,
+  };
+
   const { data, error } = await supabase
     .from("tools")
-    .insert([input])
+    .insert([processedInput])
     .select(
       `
       id,
@@ -155,17 +167,40 @@ export interface UpdateToolInput {
   execution_count?: number;
   average_execution_time?: number;
   success_count?: number;
-  instruction_examples: string[];
+  instruction_examples?: string[];
 }
+
 export const updateTool = async (input: UpdateToolInput) => {
   if (!input.id) {
     throw new Error("Tool ID not specified");
   }
   const supabase = createClient();
+  const processedInput: { [key: string]: any } = {
+    ...input,
+    id: undefined,
+  };
+
+  // 使用例をベクトル化する
+  if (input.instruction_examples) {
+    // 結果をキャッシュする
+    const { data } = await supabase
+      .from("tools")
+      .select("instruction_examples")
+      .eq("id", input.id)
+      .single();
+
+    if (
+      JSON.stringify(data?.instruction_examples) !==
+      JSON.stringify(input.instruction_examples)
+    ) {
+      processedInput.instruction_examples_embedding =
+        await getAndAverageEmbeddings(input.instruction_examples);
+    }
+  }
 
   const { data, error } = await supabase
     .from("tools")
-    .update({ ...input, id: undefined })
+    .update(processedInput)
     .eq("id", input.id)
     .select(
       `

@@ -1,13 +1,7 @@
-import { AssistantAPIParam, ResponderAgentParam } from "@/types/api/Assistant";
+import { ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
-import {
-  ChatCompletionChunk,
-  ChatCompletionMessageParam,
-} from "openai/resources";
-import {
-  ChatCompletionCreateParamsBase,
-  ChatCompletionTool,
-} from "openai/resources/chat/completions";
+import { ChatCompletionChunk } from "openai/resources";
+import { ChatCompletionTool } from "openai/resources/chat/completions";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";

@@ -12,8 +12,8 @@ export const getMessagesFromAssistantAPIParams = async (
     if (params.content) {
       const messageLogs = await getMessagesByThreadID({
         threadID: params.threadID,
-        page: params.page,
-        pageSize: params.pageSize,
+        // page: params.page,
+        // pageSize: params.pageSize,
       });
       const userMessage: Message = {
         id: uuidv4(),

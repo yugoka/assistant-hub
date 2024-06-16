@@ -1,6 +1,6 @@
 import { EditIcon, KeyRoundIcon, XIcon } from "lucide-react";
 import { ToolIcon } from "../common/icons/ToolIcon";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { Tool } from "@/types/Tool";
 import Link from "next/link";
@@ -22,11 +22,12 @@ export default function ToolOverview({ tool }: Props) {
             <ToolIcon className="w-6 h-6 text-gray-500 dark:text-gray-400" />
             <h1 className="text-2xl font-bold">{tool.name}</h1>
           </div>
-          <Link href={`/tools/${tool.id}/edit`}>
-            <Button variant="outline">
-              <EditIcon className="w-4 mr-1" />
-              Edit
-            </Button>
+          <Link
+            className={buttonVariants({ variant: "outline" })}
+            href={`/tools/${tool.id}/edit`}
+          >
+            <EditIcon className="w-4 mr-1" />
+            Edit
           </Link>
         </div>
         <div>
