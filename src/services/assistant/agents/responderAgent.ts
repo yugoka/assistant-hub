@@ -13,8 +13,6 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
-import { Tool } from "@/types/Tool";
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const mockTools: ChatCompletionTool[] = [
   {
@@ -84,134 +82,136 @@ export default class ResponderAgent {
     this.model = model;
   }
 
-  private async fetch() {
-    const tools = this.steps < this.maxToolCallSteps ? this.tools : undefined;
-
-    const response = await openai.chat.completions.create({
-      model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
-      stream: true,
-      messages: this.currentMessages,
-      tools,
-    });
-
-    return response.toReadableStream();
-  }
-
   public async run() {
-    console.log("=== Running Responder Agent ===");
-    if (!this.currentMessages.length) {
-      throw new Error("Messages array is empty");
-    }
-
-    // 最後に保存するメッセージのリスト
-    const messagesToSave: Message[] = [];
-
-    // ユーザーからのメッセージを保存する
-    const lastMessage = this.currentMessages[this.currentMessages.length - 1];
-    messagesToSave.push(lastMessage);
-
-    // readableStreamの処理の中からagentの情報にアクセスできるようにする
-    const agent = this;
+    this.initialize();
 
     const readableStream = new ReadableStream<string>({
-      async start(controller) {
-        while (agent.steps <= MAX_TOOLCALL_STEPS) {
-          console.log(
-            "Step:",
-            agent.steps,
-            ", Messages:",
-            agent.currentMessages.length
-          );
-
-          const responseStream = await agent.fetch();
-          const reader = responseStream.getReader();
-          const decoder = new TextDecoder();
-
-          // 現在の返答のUUID
-          const currentMessageUUID = uuidv4();
-
-          let newChunkObject = {} as ChatCompletionChunk;
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const parsedChunk = JSON.parse(chunk) as ChatCompletionChunk;
-            newChunkObject = mergeResponseObjects(
-              newChunkObject,
-              parsedChunk
-            ) as ChatCompletionChunk;
-
-            controller.enqueue(
-              JSON.stringify({
-                ...parsedChunk.choices[0].delta,
-                // 各メッセージオブジェクトはIDで識別する
-                id: currentMessageUUID,
-              }) + "\n"
-            );
-          }
-
-          // 完成したメッセージ
-          const newMessage = {
-            ...newChunkObject.choices[0].delta,
-            id: currentMessageUUID,
-            thread_id: agent.threadID,
-          } as Message;
-
-          const hasToolCall =
-            newChunkObject.choices[0].finish_reason === "tool_calls";
-
-          messagesToSave.push(newMessage);
-
-          if (!hasToolCall) {
-            agent.currentMessages = [...agent.currentMessages, newMessage];
-            break;
-          }
-
-          const toolCalls =
-            newMessage.role === "assistant" && newMessage.tool_calls
-              ? newMessage.tool_calls
-              : [];
-          const toolCallResults = await agent.executeTools(toolCalls);
-
-          controller.enqueue(
-            toolCallResults
-              .map(
-                (toolCallResult) =>
-                  JSON.stringify({
-                    ...toolCallResult,
-                  }) + "\n"
-              )
-              .join("")
-          );
-
-          // toolの実行までが終わったら一連のメッセージを保存する
-          // → 実行結果のないtool_callsをログに含めるとエラーが出るため。
-          // エージェントの動きをブロックしないために最後にまとめて保存する
-          if (agent.save) {
-            for (const toolMessage of toolCallResults) {
-              messagesToSave.push(toolMessage);
-            }
-          }
-
-          agent.currentMessages = [
-            ...agent.currentMessages,
-            newMessage,
-            ...toolCallResults,
-          ];
-          agent.steps += 1;
-        }
-
-        // レスポンスが完了した後もvercelのfunctionを生存させる
-        waitUntil(agent.saveMessages(messagesToSave));
-        controller.close();
+      start: async (controller) => {
+        await this.processSteps(controller);
+        this.finalize(controller);
       },
     });
 
     return readableStream;
   }
 
-  // ツール実行
+  private initialize() {
+    console.log("=== Running Responder Agent ===");
+    if (!this.currentMessages.length) {
+      throw new Error("Messages array is empty");
+    }
+  }
+
+  private async processSteps(
+    controller: ReadableStreamDefaultController<string>
+  ) {
+    const messagesToSave: Message[] = [
+      this.currentMessages[this.currentMessages.length - 1],
+    ];
+
+    while (this.steps < this.maxToolCallSteps) {
+      console.log(
+        "Step:",
+        this.steps,
+        ", Messages:",
+        this.currentMessages.length
+      );
+
+      const responseStream = await this.fetch();
+      const reader = responseStream.getReader();
+      const decoder = new TextDecoder();
+
+      const { newMessage, newChunkObject } = await this.processResponse(
+        reader,
+        decoder,
+        controller
+      );
+
+      messagesToSave.push(newMessage);
+
+      if (!this.hasToolCall(newChunkObject)) {
+        this.currentMessages.push(newMessage);
+        break;
+      }
+
+      const toolCallResults = await this.handleToolCalls(newMessage);
+      toolCallResults.forEach((result) =>
+        controller.enqueue(JSON.stringify(result) + "\n")
+      );
+
+      if (this.save) {
+        messagesToSave.push(...toolCallResults);
+      }
+
+      this.currentMessages.push(newMessage, ...toolCallResults);
+      this.steps += 1;
+    }
+
+    waitUntil(this.saveMessages(messagesToSave));
+  }
+
+  private async processResponse(
+    reader: ReadableStreamDefaultReader,
+    decoder: TextDecoder,
+    controller: ReadableStreamDefaultController<string>
+  ) {
+    const currentMessageUUID = uuidv4();
+    let newChunkObject = {} as ChatCompletionChunk;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const parsedChunk = JSON.parse(chunk) as ChatCompletionChunk;
+      newChunkObject = mergeResponseObjects(
+        newChunkObject,
+        parsedChunk
+      ) as ChatCompletionChunk;
+
+      controller.enqueue(
+        JSON.stringify({
+          ...parsedChunk.choices[0].delta,
+          id: currentMessageUUID,
+        }) + "\n"
+      );
+    }
+
+    const newMessage = {
+      ...newChunkObject.choices[0].delta,
+      id: currentMessageUUID,
+      thread_id: this.threadID,
+    } as Message;
+    return { newMessage, newChunkObject };
+  }
+
+  private hasToolCall(newChunkObject: ChatCompletionChunk): boolean {
+    return newChunkObject.choices[0].finish_reason === "tool_calls";
+  }
+
+  private async handleToolCalls(newMessage: Message): Promise<ToolMessage[]> {
+    const toolCalls =
+      newMessage.role === "assistant" && newMessage.tool_calls
+        ? newMessage.tool_calls
+        : [];
+    return this.executeTools(toolCalls);
+  }
+
+  private finalize(controller: ReadableStreamDefaultController<string>) {
+    controller.close();
+  }
+
+  private async fetch() {
+    const tools = this.steps < this.maxToolCallSteps ? this.tools : undefined;
+    const response = await this.openai.chat.completions.create({
+      model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
+      stream: true,
+      messages: this.currentMessages,
+      tools,
+    });
+    return response.toReadableStream();
+  }
+
   private async executeTools(
     toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
   ): Promise<ToolMessage[]> {
@@ -219,8 +219,6 @@ export default class ResponderAgent {
 
     const result: ToolMessage[] = toolCalls.map((toolCall) => {
       return {
-        // 各toolCallResultは別メッセージなので、個別のUUIDを持つ
-        // 返答を高速化するためにこちらで指定したUUIDでメッセージを保存してもらう
         id: uuidv4(),
         role: "tool",
         tool_call_id: toolCall.id || "",
@@ -232,7 +230,6 @@ export default class ResponderAgent {
     return result;
   }
 
-  // エージェントの動きをブロックしないために、awaitせずに使う場合がある。
   private async saveMessages(newMessages: Message[]) {
     try {
       for await (const message of newMessages) {
