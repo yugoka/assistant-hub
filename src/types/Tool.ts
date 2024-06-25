@@ -15,3 +15,7 @@ export type Tool = {
   instruction_examples: string[];
   created_at: string;
 };
+
+export type ToolWithSimilarity = Tool & {
+  similarity: number;
+};
