@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
+import { getToolsByPrompt } from "@/services/tools";
+import { processMessagesForLM } from "@/utils/message";
 
 const mockTools: ChatCompletionTool[] = [
   {
@@ -77,7 +79,7 @@ export default class ResponderAgent {
   }
 
   public async run() {
-    this.initialize();
+    await this.initialize();
 
     const readableStream = new ReadableStream<string>({
       start: async (controller) => {
@@ -89,7 +91,17 @@ export default class ResponderAgent {
     return readableStream;
   }
 
-  private initialize() {
+  private async initialize() {
+    // 一旦テストでツールを取ってきてみる
+    const suggestedTools = await getToolsByPrompt({
+      query: processMessagesForLM(this.currentMessages),
+    });
+    console.log(
+      suggestedTools.map((tool) => {
+        return { name: tool.name, similarity: tool.similarity };
+      })
+    );
+
     console.log("=== Running Responder Agent ===");
     if (!this.currentMessages.length) {
       throw new Error("Messages array is empty");

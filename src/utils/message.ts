@@ -1,5 +1,5 @@
+import { Message } from "@/types/Message";
 import { ChatCompletionContentPart } from "openai/resources";
-import { Message } from "postcss";
 import { v4 as uuidv4 } from "uuid";
 
 export const parseMessageContent = (

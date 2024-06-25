@@ -158,18 +158,18 @@ export const getToolByID = async ({
 // プロンプトによるツール取得
 // あらかじめベクトル化したツール使用例から類似性を計算
 // ==============
-export interface GetToolByPromptOptions {
+export interface GetToolsByPromptOptions {
   query: string;
   similarityThreshold?: number;
   minTools?: number;
   maxTools?: number;
 }
-export const getToolByPrompt = async ({
+export const getToolsByPrompt = async ({
   query,
   similarityThreshold = 0,
   minTools = 0,
   maxTools = 5,
-}: GetToolByPromptOptions): Promise<Tool[] | null> => {
+}: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {
   if (!query) {
     throw new Error("Prompt is not defined");
   }
@@ -205,13 +205,13 @@ export const getToolByPrompt = async ({
   if (error) {
     // 行が見つかりません / UUIDが不正
     if (error.code === "PGRST116" || error.code === "22P02") {
-      return null;
+      return [];
     } else {
       throw error;
     }
   }
 
-  return filteredTools || null;
+  return filteredTools || [];
 };
 
 // ==============

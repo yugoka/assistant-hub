@@ -19,6 +19,7 @@ export default function ToolsPage() {
       schema: "",
       auth_type: "None",
       credential: "",
+      instruction_examples: [{ text: "" }],
     },
   });
 
