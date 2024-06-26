@@ -17,6 +17,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
 
   const router = useRouter();
   const { user } = useUser();
@@ -30,11 +31,16 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
       if (isNewThread) {
         router.replace(`/chat?thread_id=${threadID}`);
       } else {
+        setIsError(false);
+
         if (threadID) {
           try {
             setIsLoading(true);
             const messages = await getMessages(threadID);
             setMessages(messages);
+          } catch (error) {
+            console.error(error);
+            setIsError(true);
           } finally {
             setIsLoading(false);
           }
@@ -59,6 +65,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   // 送信時
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsError(false);
     if (!input.trim() || !user) return;
 
     try {
@@ -72,6 +79,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
       await sendMessageToAPI(newMessages, targetThreadID);
     } catch (error) {
       console.error("Error in handleSubmit:", error);
+      setIsError(true);
     }
   };
 
@@ -103,7 +111,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
 
       await processMessageStream(messagesStream, newMessages);
     } catch (error) {
-      console.error("Error sending message:", error);
+      throw new Error(`Error sending message: ${error}`);
     }
   };
 
@@ -136,7 +144,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
 
           setMessages([...newMessages]);
         } catch (error) {
-          console.error("Error parsing JSON line:", error);
+          throw new Error(`Error parsing lines: ${error}`);
         }
       }
     }
@@ -149,6 +157,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
     handleInputChange,
     handleSubmit,
     isLoading,
+    isError,
     refetch,
   };
 };

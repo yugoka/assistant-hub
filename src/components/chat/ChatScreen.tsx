@@ -7,6 +7,7 @@ import ChatLogs from "./ChatLogs";
 import Loader from "../common/Loader";
 import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
+import ErrorLarge from "../common/ErrorLarge";
 
 type Props = {
   threadID: string | null | undefined;
@@ -22,6 +23,7 @@ export default function ChatScreen({ threadID }: Props) {
     handleInputChange,
     handleSubmit,
     isLoading,
+    isError,
   } = useChat({
     api: "/api/chat/",
     threadID,
@@ -109,6 +111,8 @@ export default function ChatScreen({ threadID }: Props) {
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
         {isLoading ? (
           <Loader />
+        ) : isError ? (
+          <ErrorLarge />
         ) : (
           <>
             <div className="grid gap-4 max-w-2xl mx-auto">

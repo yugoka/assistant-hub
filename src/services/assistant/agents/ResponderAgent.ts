@@ -92,20 +92,20 @@ export default class ResponderAgent {
   }
 
   private async initialize() {
+    console.log("=== Running Responder Agent ===");
+    if (!this.currentMessages.length) {
+      throw new Error("Messages array is empty");
+    }
+
     // 一旦テストでツールを取ってきてみる
     const suggestedTools = await getToolsByPrompt({
-      query: processMessagesForLM(this.currentMessages.slice(-5, -1)),
+      query: processMessagesForLM(this.currentMessages.slice(-5)),
     });
     console.log(
       suggestedTools.map((tool) => {
         return { name: tool.name, similarity: tool.similarity };
       })
     );
-
-    console.log("=== Running Responder Agent ===");
-    if (!this.currentMessages.length) {
-      throw new Error("Messages array is empty");
-    }
   }
 
   private async processSteps(
