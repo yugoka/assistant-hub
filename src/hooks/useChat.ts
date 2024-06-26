@@ -47,7 +47,6 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
 
   const refetch = async () => {
     if (threadID) {
-      console.log("fetch");
       const messages = await getMessages(threadID);
       setMessages(messages);
     }

@@ -94,7 +94,7 @@ export default class ResponderAgent {
   private async initialize() {
     // 一旦テストでツールを取ってきてみる
     const suggestedTools = await getToolsByPrompt({
-      query: processMessagesForLM(this.currentMessages),
+      query: processMessagesForLM(this.currentMessages.slice(-5, -1)),
     });
     console.log(
       suggestedTools.map((tool) => {
