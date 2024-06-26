@@ -1,7 +1,7 @@
-import { AuthType, Tool } from "@/types/Tool";
+import { AuthType, Tool, ToolWithSimilarity } from "@/types/Tool";
 import { createClient } from "@/utils/supabase/server";
-import { getAndAverageEmbeddings } from "./embeddings";
-import InstructionExamples from "@/components/tools/editor/InstructionExamples";
+import { getAndAverageEmbeddings, getEmbedding } from "./embeddings";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 // ==============
 // ツール作成
@@ -152,6 +152,66 @@ export const getToolByID = async ({
   }
 
   return data || null;
+};
+
+// ==============
+// プロンプトによるツール取得
+// あらかじめベクトル化したツール使用例から類似性を計算
+// ==============
+export interface GetToolsByPromptOptions {
+  query: string;
+  similarityThreshold?: number;
+  minTools?: number;
+  maxTools?: number;
+}
+export const getToolsByPrompt = async ({
+  query,
+  similarityThreshold = 0,
+  minTools = 0,
+  maxTools = 5,
+}: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {
+  if (!query) {
+    throw new Error("Prompt is not defined");
+  }
+
+  const queryEmbedding = await getEmbedding(query);
+
+  const supabase = createClient();
+
+  const { data, error }: PostgrestResponse<ToolWithSimilarity> =
+    await supabase.rpc("match_tools", {
+      query_embedding: queryEmbedding,
+      match_count: maxTools,
+    });
+
+  if (!Array.isArray(data)) {
+    throw new Error("Data is not array");
+  }
+
+  const filteredTools: ToolWithSimilarity[] = [];
+
+  // 閾値以上の類似度のツールを抽出する。ただし、最大数と最小数の範囲内にする
+  for (const tool of data) {
+    if (
+      filteredTools.length < minTools ||
+      tool.similarity >= similarityThreshold
+    ) {
+      filteredTools.push(tool);
+    }
+
+    if (filteredTools.length >= maxTools) break;
+  }
+
+  if (error) {
+    // 行が見つかりません / UUIDが不正
+    if (error.code === "PGRST116" || error.code === "22P02") {
+      return [];
+    } else {
+      throw error;
+    }
+  }
+
+  return filteredTools || [];
 };
 
 // ==============

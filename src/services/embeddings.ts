@@ -17,7 +17,10 @@ export const getEmbedding = async (
     options?.model ||
     process.env.EMBEDDINGS_DEFAULT_MODEL ||
     "text-embedding-3-small";
-  const dimensions = options?.dimensions || 256;
+  const dimensions =
+    options?.dimensions ||
+    parseInt(process.env.EMBEDDINGS_DEFAULT_DIMENSIONS || "") ||
+    256;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
