@@ -1,14 +1,11 @@
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
   TableRow,
   TableHead,
   TableBody,
-  TableCell,
 } from "@/components/ui/table";
 import { Apikey } from "@/types/ApiKey";
-import { FilePenIcon, TrashIcon } from "lucide-react";
 import APIKeyTableRow from "./APIKeyTableRow";
 
 type Props = {
