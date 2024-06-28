@@ -9,6 +9,7 @@ import { createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
 import { getToolsByPrompt } from "@/services/tools";
 import { processMessagesForLM } from "@/utils/message";
+import { createToolsFromOpenAPISpec } from "@cloudflare/ai-utils";
 
 const mockTools: ChatCompletionTool[] = [
   {
@@ -102,8 +103,11 @@ export default class ResponderAgent {
       query: processMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
     console.log(
-      suggestedTools.map((tool) => {
-        return { name: tool.name, similarity: tool.similarity };
+      suggestedTools.forEach(async (tool) => {
+        const toolSchema = await createToolsFromOpenAPISpec(tool.schema);
+        for (const schema of toolSchema) {
+          console.log(JSON.stringify(schema, null, 2));
+        }
       })
     );
   }
