@@ -29,19 +29,17 @@ import { Loader2, PencilIcon } from "lucide-react";
 import InstructionExamples from "./InstructionExamples";
 import { FormEvent, useState } from "react";
 import { validateOpenAPISchema } from "@/utils/schema";
-const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
   (data: string) => {
     try {
-      const parsedData = JSON.parse(data);
-      return validateOpenAPISchema(parsedData);
+      return validateOpenAPISchema(data);
     } catch {
       return false;
     }
   },
   {
-    message: "Schema must be a valid OpenAPI 3 JSON schema.",
+    message: "Schema must be a valid OpenAPI 3 JSON or YAML schema.",
   }
 );
 
@@ -171,7 +169,7 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
                     />
                   </FormControl>
                   <FormDescription>
-                    A valid OpenAPI 2 or 3 JSON schema can be used.
+                    A valid OpenAPI 3 JSON or YAML schema can be used.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

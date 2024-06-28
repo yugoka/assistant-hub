@@ -8,6 +8,7 @@ import { z } from "zod";
 import { CreateToolInput } from "@/services/tools";
 import { useRouter } from "next/navigation";
 import { Tool } from "@/types/Tool";
+import { convertSchemaToJson, formatJsonSchema } from "@/utils/schema";
 
 export default function ToolsPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function ToolsPage() {
         instruction_examples: values.instruction_examples.map(
           (instruction) => instruction.text
         ),
+        schema: formatJsonSchema(convertSchemaToJson(values.schema)),
       };
 
       const res = await fetch("/api/tools", {

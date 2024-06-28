@@ -5,6 +5,7 @@ import { Card, CardContent } from "../ui/card";
 import { Tool } from "@/types/Tool";
 import Link from "next/link";
 import { useState } from "react";
+import { formatJsonSchema } from "@/utils/schema";
 
 type Props = {
   tool: Tool;
@@ -43,7 +44,7 @@ export default function ToolOverview({ tool }: Props) {
         <Card className="bg-gray-100 dark:bg-gray-800 p-4 max-h-72 overflow-scroll">
           <CardContent className="py-1 px-2">
             <pre className="text-sm font-mono text-gray-500 dark:text-gray-400">
-              {JSON.stringify(JSON.parse(tool.schema), null, 2)}
+              {formatJsonSchema(tool.schema)}
             </pre>
           </CardContent>
         </Card>

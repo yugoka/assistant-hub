@@ -5,6 +5,7 @@ import ToolEditor, {
 } from "@/components/tools/editor/ToolEditor";
 import { useTool } from "@/contexts/ToolContext";
 import { UpdateToolInput } from "@/services/tools";
+import { convertSchemaToJson, formatJsonSchema } from "@/utils/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -41,6 +42,7 @@ export default function ToolsEditPage() {
         instruction_examples: values.instruction_examples.map(
           (instruction) => instruction.text
         ),
+        schema: formatJsonSchema(convertSchemaToJson(values.schema)),
       };
 
       const url = `/api/tools/${values.id}`;
