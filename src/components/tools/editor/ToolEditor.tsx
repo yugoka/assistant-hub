@@ -28,24 +28,20 @@ import Link from "next/link";
 import { Loader2, PencilIcon } from "lucide-react";
 import InstructionExamples from "./InstructionExamples";
 import { FormEvent, useState } from "react";
+import { validateOpenAPISchema } from "@/utils/schema";
 const OpenAPISchemaValidator = require("openapi-schema-validator").default;
 
 const openAPIJsonSchema = z.string().refine(
   (data: string) => {
     try {
       const parsedData = JSON.parse(data);
-      const openAPIVersion = parsedData.openapi[0];
-      const openAPISchemaValidator = new OpenAPISchemaValidator({
-        version: openAPIVersion,
-      });
-      const validationResult = openAPISchemaValidator.validate(parsedData);
-      return validationResult.errors.length === 0;
+      return validateOpenAPISchema(parsedData);
     } catch {
       return false;
     }
   },
   {
-    message: "Schema must be a valid OpenAPI JSON schema.",
+    message: "Schema must be a valid OpenAPI 3 JSON schema.",
   }
 );
 
