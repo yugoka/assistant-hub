@@ -1,26 +1,24 @@
 import yaml from "js-yaml";
 import { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
-import SwaggerParser from "@apidevtools/swagger-parser";
 import { getExecutor } from "./toolExecutor";
 import { ChatCompletionTool } from "openai/resources";
+import { Resolver } from "@stoplight/json-ref-resolver";
+import { Tool } from "@/types/Tool";
+const resolver = new Resolver();
 
 export type ExecutorFunction = (
   argsString: string,
   customHeadersString?: string
 ) => Promise<any>;
 
-export type ToolWithExecutor = ChatCompletionTool & {
+export type OpenAIToolWithExecutor = ChatCompletionTool & {
   path: string;
   method: string;
-  originalName: string;
+  operationId?: string;
+  baseTool: Tool;
   execute: ExecutorFunction;
 };
 
-/**
- * OpenAPI仕様をパースする関数
- * @param openapiSpec - 文字列または既にパースされたオブジェクトとしてのOpenAPI仕様
- * @returns パースされたOpenAPI仕様オブジェクト
- */
 function parseOpenapiSpec(
   openapiSpec: string | object
 ): OpenAPIV3.Document | OpenAPIV3_1.Document {
@@ -36,11 +34,6 @@ function parseOpenapiSpec(
   return openapiSpec as OpenAPIV3.Document | OpenAPIV3_1.Document;
 }
 
-/**
- * ランダムなツールIDを生成する関数
- * @param length - 生成するIDの長さ（デフォルト: 5）
- * @returns 生成されたID
- */
 function generateRandomToolId(length: number = 5): string {
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -49,20 +42,10 @@ function generateRandomToolId(length: number = 5): string {
   ).join("");
 }
 
-/**
- * オブジェクトがOperationObjectかどうかを判定する型ガード関数
- * @param obj - 判定対象のオブジェクト
- * @returns オブジェクトがOperationObjectであればtrue
- */
 function isOperationObject(obj: any): obj is OpenAPIV3.OperationObject {
   return typeof obj === "object" && obj !== null && "responses" in obj;
 }
 
-/**
- * ツールのパラメータを処理する関数
- * @param operation - OpenAPI操作オブジェクト
- * @returns 処理されたパラメータオブジェクト
- */
 function processToolParameters(operation: OpenAPIV3.OperationObject) {
   const parameters = {
     type: "object",
@@ -102,19 +85,16 @@ function processToolParameters(operation: OpenAPIV3.OperationObject) {
   return parameters;
 }
 
-/**
- * OpenAPIスキーマをツールオブジェクトに変換する関数
- * @param openapiSpec - OpenAPI仕様（文字列またはオブジェクト）
- * @returns 変換されたツールオブジェクトの配列
- */
-export async function convertOpenAPIToTools(
-  openapiSpec: string | object
-): Promise<ToolWithExecutor[]> {
+// DB上のツールからOpenAI Toolsに変換
+// 名前が分かりづらいのでどうにかしたい
+export async function convertRegisteredToolsToOpenAITools(
+  inputTool: Tool
+): Promise<OpenAIToolWithExecutor[]> {
+  const openapiSpec = inputTool.schema;
   try {
     const specObject = parseOpenapiSpec(openapiSpec);
-    const spec = (await SwaggerParser.dereference(
-      specObject
-    )) as OpenAPIV3.Document;
+    const resolved = await resolver.resolve(specObject);
+    const spec = resolved.result as OpenAPIV3.Document;
 
     if (!spec.servers || spec.servers.length === 0) {
       throw new Error("No server URL found in the OpenAPI schema");
@@ -122,7 +102,7 @@ export async function convertOpenAPIToTools(
 
     const serverUrl = spec.servers[0].url;
     const usedNames = new Set<string>();
-    const tools: ToolWithExecutor[] = [];
+    const tools: OpenAIToolWithExecutor[] = [];
 
     for (const [path, pathItem] of Object.entries(spec.paths)) {
       if (!pathItem) continue;
@@ -135,7 +115,7 @@ export async function convertOpenAPIToTools(
         } while (usedNames.has(uniqueName));
         usedNames.add(uniqueName);
 
-        const tool: ToolWithExecutor = {
+        const tool: OpenAIToolWithExecutor = {
           type: "function",
           function: {
             name: uniqueName,
@@ -146,8 +126,9 @@ export async function convertOpenAPIToTools(
           },
           path,
           method,
-          originalName: operation.operationId || `${method}-${path}`,
+          operationId: operation.operationId,
           execute: getExecutor(method, path, serverUrl),
+          baseTool: inputTool,
         };
 
         tools.push(tool);

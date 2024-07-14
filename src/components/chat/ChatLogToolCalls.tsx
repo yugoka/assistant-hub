@@ -1,4 +1,4 @@
-import { Message } from "@/types/Message";
+import { CustomToolCall, Message } from "@/types/Message";
 import { useState } from "react";
 import { ToolIcon } from "../common/icons/ToolIcon";
 import {
@@ -32,6 +32,12 @@ export default function ChatLogToolCalls({
     }
   };
 
+  const toolCallNames =
+    message.role === "assistant" &&
+    message.tool_calls
+      .filter((toolCall: CustomToolCall) => toolCall.baseToolName)
+      .map((toolCall: CustomToolCall) => toolCall.baseToolName)
+      .join(", ");
   return (
     <>
       {message.role === "assistant" && message.tool_calls && (
@@ -46,9 +52,8 @@ export default function ChatLogToolCalls({
               <AccordionTrigger className="flex justify-start">
                 <p className="mr-2 flex items-center text-xs font-mono text-gray-500 dark:text-gray-400">
                   <ToolIcon className="inline-block w-4 mr-2" />
-                  {message.tool_calls
-                    .map((toolCall) => toolCall.function.name)
-                    .join(", ")}{" "}
+                  {`${message.tool_calls.length} Tools Called`}
+                  {toolCallNames && `: ${toolCallNames}`}{" "}
                 </p>
               </AccordionTrigger>
               <AccordionContent>

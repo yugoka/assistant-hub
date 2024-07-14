@@ -3,6 +3,7 @@ import {
   ChatCompletionChunk,
   ChatCompletionFunctionMessageParam,
   ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
   ChatCompletionSystemMessageParam,
   ChatCompletionToolMessageParam,
   ChatCompletionUserMessageParam,
@@ -30,11 +31,21 @@ export type UserMessage = ChatCompletionUserMessageParam & {
   created_at?: string;
   thread_id: string;
 };
+
+export type CustomToolCall = {
+  operationId?: string;
+  method?: string;
+  path?: string;
+  baseToolName?: string;
+} & ChatCompletionMessageToolCall;
+
 export type AssistantMessage = ChatCompletionAssistantMessageParam & {
   id: string;
   created_at?: string;
   thread_id: string;
+  tool_calls: CustomToolCall[];
 };
+
 export type ToolMessage = ChatCompletionToolMessageParam & {
   id: string;
   created_at?: string;

@@ -9,9 +9,10 @@ import { waitUntil } from "@vercel/functions";
 import { getToolsByPrompt } from "@/services/tools";
 import { stringfyMessagesForLM } from "@/utils/message";
 import {
-  convertOpenAPIToTools,
-  ToolWithExecutor,
+  convertRegisteredToolsToOpenAITools,
+  OpenAIToolWithExecutor,
 } from "../toolExecution/openapiToTools";
+import { ToolWithSimilarity } from "@/types/Tool";
 
 const MAX_STEPS = 5;
 
@@ -22,7 +23,8 @@ export default class ResponderAgent {
   private readonly save: boolean;
   private readonly model?: string;
   private currentMessages: Message[];
-  private tools: ToolWithExecutor[];
+  private tools: OpenAIToolWithExecutor[];
+  private suggestedTools: ToolWithSimilarity[];
   public steps: number;
 
   constructor({
@@ -38,6 +40,7 @@ export default class ResponderAgent {
     this.maxToolCallSteps = maxSteps;
     this.save = save;
     this.tools = [];
+    this.suggestedTools = [];
     this.steps = 0;
     this.model = model;
   }
@@ -67,11 +70,10 @@ export default class ResponderAgent {
     });
 
     const promises = suggestedTools.map(async (suggestedTool) => {
-      return await convertOpenAPIToTools(suggestedTool.schema);
+      return await convertRegisteredToolsToOpenAITools(suggestedTool);
     });
     const results = await Promise.all(promises);
     this.tools = results.flat();
-    console.log(this.tools);
   }
 
   private async processSteps(
@@ -184,6 +186,10 @@ export default class ResponderAgent {
     return response.toReadableStream();
   }
 
+  private getToolByName(name: string): OpenAIToolWithExecutor | undefined {
+    return this.tools.find((tool) => name === tool.function.name);
+  }
+
   private async executeTools(
     toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
   ): Promise<ToolMessage[]> {
@@ -205,7 +211,23 @@ export default class ResponderAgent {
   private async saveMessages(newMessages: Message[]) {
     try {
       for await (const message of newMessages) {
-        await createMessage(message);
+        const newMessage = message;
+
+        // 保存用にツール情報を付加する
+        if (newMessage.role === "assistant" && newMessage.tool_calls?.length) {
+          newMessage.tool_calls = newMessage.tool_calls.map((toolCall) => {
+            const calledTool = this.getToolByName(toolCall.function.name);
+            return {
+              ...toolCall,
+              operationId: calledTool?.operationId,
+              method: calledTool?.method,
+              path: calledTool?.path,
+              baseToolName: calledTool?.baseTool.name,
+            };
+          });
+        }
+
+        await createMessage(newMessage);
         console.log(
           "[Message Saved]",
           message.role,
