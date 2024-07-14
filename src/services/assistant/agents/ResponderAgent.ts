@@ -1,56 +1,19 @@
 import { ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
 import { ChatCompletionChunk } from "openai/resources";
-import { ChatCompletionTool } from "openai/resources/chat/completions";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
 import { getToolsByPrompt } from "@/services/tools";
-import { processMessagesForLM } from "@/utils/message";
-import { createToolsFromOpenAPISpec } from "@cloudflare/ai-utils";
+import { stringfyMessagesForLM } from "@/utils/message";
+import {
+  convertOpenAPIToTools,
+  ToolWithExecutor,
+} from "../toolExecution/openapiToTools";
 
-const mockTools: ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "get_current_weather",
-      description: "Get the current weather in a given location.",
-      parameters: {
-        type: "object",
-        properties: {
-          location: {
-            type: "string",
-            description: "The city and state, e.g. San Francisco, CA",
-          },
-          unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-        },
-        required: ["location"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "control_air_conditioner",
-      description: "部屋のクーラーの温度を調整します",
-      parameters: {
-        type: "object",
-        properties: {
-          temperature: {
-            type: "number",
-            description: "部屋の温度",
-          },
-          unit: { type: "string", enum: ["celsius", "fahrenheit"] },
-        },
-        required: ["temperature"],
-      },
-    },
-  },
-];
-
-const MAX_TOOLCALL_STEPS = 5;
+const MAX_STEPS = 5;
 
 export default class ResponderAgent {
   private readonly openai: OpenAI;
@@ -59,22 +22,22 @@ export default class ResponderAgent {
   private readonly save: boolean;
   private readonly model?: string;
   private currentMessages: Message[];
-  private tools: ChatCompletionTool[];
+  private tools: ToolWithExecutor[];
   public steps: number;
 
   constructor({
     threadID,
     messages,
-    maxToolCallSteps = MAX_TOOLCALL_STEPS,
+    maxSteps = MAX_STEPS,
     save = true,
     model,
   }: ResponderAgentParam) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     this.threadID = threadID;
     this.currentMessages = messages;
-    this.maxToolCallSteps = maxToolCallSteps;
+    this.maxToolCallSteps = maxSteps;
     this.save = save;
-    this.tools = mockTools;
+    this.tools = [];
     this.steps = 0;
     this.model = model;
   }
@@ -100,16 +63,15 @@ export default class ResponderAgent {
 
     // 一旦テストでツールを取ってきてみる
     const suggestedTools = await getToolsByPrompt({
-      query: processMessagesForLM(this.currentMessages.slice(-5)) || "",
+      query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
-    console.log(
-      suggestedTools.forEach(async (tool) => {
-        const toolSchema = await createToolsFromOpenAPISpec(tool.schema);
-        for (const schema of toolSchema) {
-          console.log(JSON.stringify(schema, null, 2));
-        }
-      })
-    );
+
+    const promises = suggestedTools.map(async (suggestedTool) => {
+      return await convertOpenAPIToTools(suggestedTool.schema);
+    });
+    const results = await Promise.all(promises);
+    this.tools = results.flat();
+    console.log(this.tools);
   }
 
   private async processSteps(

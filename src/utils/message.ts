@@ -13,7 +13,7 @@ export const parseMessageContent = (
 };
 
 // messagesの配列(json)を自然言語モデルが認識しやすい形に変形
-export const processMessagesForLM = (messages: Message[]) => {
+export const stringfyMessagesForLM = (messages: Message[]): string => {
   let result = "";
 
   for (const message of messages) {

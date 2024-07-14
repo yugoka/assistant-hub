@@ -6,7 +6,7 @@ export type AssistantAPIParam = {
   messages?: Message[];
   content?: string;
   save?: boolean;
-  maxToolCallSteps?: number;
+  maxSteps?: number;
   model?: string;
 };
 
