@@ -166,7 +166,7 @@ export interface GetToolsByPromptOptions {
 }
 export const getToolsByPrompt = async ({
   query,
-  similarityThreshold = 0,
+  similarityThreshold = 0.25,
   minTools = 0,
   maxTools = 5,
 }: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {

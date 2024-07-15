@@ -23,6 +23,7 @@
     "@supabase/supabase-js": "latest",
     "@vercel/functions": "^1.0.2",
     "ai": "^3.1.5",
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",

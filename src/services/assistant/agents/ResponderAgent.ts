@@ -12,7 +12,6 @@ import {
   convertRegisteredToolsToOpenAITools,
   OpenAIToolWithExecutor,
 } from "../toolExecution/openapiToTools";
-import { ToolWithSimilarity } from "@/types/Tool";
 
 const MAX_STEPS = 5;
 
@@ -24,7 +23,7 @@ export default class ResponderAgent {
   private readonly model?: string;
   private currentMessages: Message[];
   private tools: OpenAIToolWithExecutor[];
-  private suggestedTools: ToolWithSimilarity[];
+  private toolsMap: Map<string, OpenAIToolWithExecutor>;
   public steps: number;
 
   constructor({
@@ -40,7 +39,8 @@ export default class ResponderAgent {
     this.maxToolCallSteps = maxSteps;
     this.save = save;
     this.tools = [];
-    this.suggestedTools = [];
+    // function nameをキーとした連想配列
+    this.toolsMap = new Map<string, OpenAIToolWithExecutor>();
     this.steps = 0;
     this.model = model;
   }
@@ -64,7 +64,6 @@ export default class ResponderAgent {
       throw new Error("Messages array is empty");
     }
 
-    // 一旦テストでツールを取ってきてみる
     const suggestedTools = await getToolsByPrompt({
       query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
@@ -73,7 +72,12 @@ export default class ResponderAgent {
       return await convertRegisteredToolsToOpenAITools(suggestedTool);
     });
     const results = await Promise.all(promises);
-    this.tools = results.flat();
+    const tools = results.flat();
+    this.tools = tools;
+
+    for (const tool of tools) {
+      this.toolsMap.set(tool.function.name, tool);
+    }
   }
 
   private async processSteps(
@@ -187,23 +191,31 @@ export default class ResponderAgent {
   }
 
   private getToolByName(name: string): OpenAIToolWithExecutor | undefined {
-    return this.tools.find((tool) => name === tool.function.name);
+    return this.toolsMap.get(name);
   }
 
   private async executeTools(
     toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
   ): Promise<ToolMessage[]> {
-    console.log("tool Calls:", toolCalls);
-
-    const result: ToolMessage[] = toolCalls.map((toolCall) => {
-      return {
+    const promises = toolCalls.map(async (toolCall) => {
+      const calledTool = this.getToolByName(toolCall.function.name);
+      const toolCallResult: ToolMessage = {
         id: uuidv4(),
         role: "tool",
         tool_call_id: toolCall.id || "",
-        content: "実行しました",
+        content: "",
         thread_id: this.threadID,
       };
+      if (!calledTool) {
+        toolCallResult.content = "Failed to execute function";
+      } else {
+        const result = await calledTool.execute(toolCall.function.arguments);
+        toolCallResult.content = JSON.stringify(result, null, 2);
+      }
+      return toolCallResult;
     });
+
+    const result: ToolMessage[] = await Promise.all(promises);
 
     return result;
   }
