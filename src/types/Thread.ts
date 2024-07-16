@@ -3,8 +3,11 @@ export type Thread = {
   name: string;
   user_id: string;
   created_at: string;
+  enable_memory: boolean;
   memory: string;
+  maximum_memory_tokens: number;
   system_prompt: string;
   protected: boolean;
   maximum_initial_input_tokens: number;
+  model_name?: string;
 };

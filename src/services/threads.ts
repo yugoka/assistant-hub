@@ -105,10 +105,13 @@ export const getThreadByID = async ({
 export interface UpdateThreadInput {
   id: string;
   name?: string;
+  enable_memory?: boolean;
+  maximum_memory_tokens?: number;
   memory?: string;
   system_prompt?: string;
   protected?: boolean;
   maximum_initial_input_tokens?: number;
+  model_name?: string;
 }
 export const updateThread = async (input: UpdateThreadInput) => {
   if (!input.id) {

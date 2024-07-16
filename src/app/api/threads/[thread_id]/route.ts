@@ -74,9 +74,12 @@ export async function PUT(
       id: params.thread_id,
       name: reqBody.name,
       memory: reqBody.memory,
+      maximum_memory_tokens: reqBody.maximum_memory_tokens,
+      enable_memory: reqBody.enable_memory,
       system_prompt: reqBody.system_prompt,
       protected: reqBody.protected,
       maximum_initial_input_tokens: reqBody.maximum_initial_input_tokens,
+      model_name: reqBody.model_name,
     };
 
     if (!params.thread_id) {
