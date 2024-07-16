@@ -8,6 +8,7 @@ import Loader from "../common/Loader";
 import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
+import ThreadSettingsDialogue from "./ThreadSettings/ThreadSettingsDialogue";
 
 type Props = {
   threadID: string | null | undefined;
@@ -107,8 +108,9 @@ export default function ChatScreen({ threadID }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col w-full">
+    <div className="flex h-full flex-col w-full relative">
       <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
+        <ThreadSettingsDialogue />
         {isLoading ? (
           <Loader />
         ) : isError ? (
