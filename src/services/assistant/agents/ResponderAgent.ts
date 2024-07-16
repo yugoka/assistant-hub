@@ -180,7 +180,10 @@ export default class ResponderAgent {
   }
 
   private async fetch() {
-    const tools = this.steps < this.maxToolCallSteps ? this.tools : undefined;
+    const tools =
+      this.steps < this.maxToolCallSteps && this.tools.length
+        ? this.tools
+        : undefined;
     const response = await this.openai.chat.completions.create({
       model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
       stream: true,
