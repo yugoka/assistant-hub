@@ -5,4 +5,6 @@ export type Thread = {
   created_at: string;
   memory: string;
   system_prompt: string;
+  protected: boolean;
+  maximum_initial_input_tokens: number;
 };

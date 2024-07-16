@@ -73,11 +73,15 @@ export async function PUT(
     const updateParams: UpdateThreadInput = {
       id: params.thread_id,
       name: reqBody.name,
+      memory: reqBody.memory,
+      system_prompt: reqBody.system_prompt,
+      protected: reqBody.protected,
+      maximum_initial_input_tokens: reqBody.maximum_initial_input_tokens,
     };
 
     if (!params.thread_id) {
       return new Response(
-        JSON.stringify({ error: "Bad Request: thread_id is required" }),
+        JSON.stringify({ error: "Bad Request: thread id is required" }),
         {
           status: 400,
           headers: {

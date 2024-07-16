@@ -105,6 +105,10 @@ export const getThreadByID = async ({
 export interface UpdateThreadInput {
   id: string;
   name?: string;
+  memory?: string;
+  system_prompt?: string;
+  protected?: boolean;
+  maximum_initial_input_tokens?: number;
 }
 export const updateThread = async (input: UpdateThreadInput) => {
   if (!input.id) {
@@ -136,7 +140,11 @@ export const deleteThread = async (input: DeleteThreadInput) => {
   }
   const supabase = createClient();
 
-  const { error } = await supabase.from("threads").delete().eq("id", input.id);
+  const { error } = await supabase
+    .from("threads")
+    .delete()
+    .eq("id", input.id)
+    .eq("protected", false);
 
   if (error) throw error;
 
