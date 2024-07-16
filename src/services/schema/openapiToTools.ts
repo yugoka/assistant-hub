@@ -1,9 +1,9 @@
 import yaml from "js-yaml";
 import { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
-import { getExecutor } from "./toolExecutor";
 import { ChatCompletionTool } from "openai/resources";
 import { Resolver } from "@stoplight/json-ref-resolver";
 import { Tool } from "@/types/Tool";
+import { getExecutor } from "../assistant/toolExecution/toolExecutor";
 const resolver = new Resolver();
 
 export type ExecutorFunction = (

@@ -11,7 +11,9 @@ import { stringfyMessagesForLM } from "@/utils/message";
 import {
   convertRegisteredToolsToOpenAITools,
   OpenAIToolWithExecutor,
-} from "../toolExecution/openapiToTools";
+} from "../../schema/openapiToTools";
+import { Thread } from "@/types/Thread";
+import { getThreadByID } from "@/services/threads";
 
 const MAX_STEPS = 5;
 
@@ -24,6 +26,7 @@ export default class ResponderAgent {
   private currentMessages: Message[];
   private tools: OpenAIToolWithExecutor[];
   private toolsMap: Map<string, OpenAIToolWithExecutor>;
+  private thread: Thread | null;
   public steps: number;
 
   constructor({
@@ -43,6 +46,7 @@ export default class ResponderAgent {
     this.toolsMap = new Map<string, OpenAIToolWithExecutor>();
     this.steps = 0;
     this.model = model;
+    this.thread = null;
   }
 
   public async run() {
@@ -63,21 +67,29 @@ export default class ResponderAgent {
     if (!this.currentMessages.length) {
       throw new Error("Messages array is empty");
     }
+    await Promise.all([this.initTools(), this.loadThread()]);
+  }
 
+  private async initTools() {
     const suggestedTools = await getToolsByPrompt({
       query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
 
-    const promises = suggestedTools.map(async (suggestedTool) => {
+    const toolConvertPromises = suggestedTools.map(async (suggestedTool) => {
       return await convertRegisteredToolsToOpenAITools(suggestedTool);
     });
-    const results = await Promise.all(promises);
-    const tools = results.flat();
+    const toolConvertResults = await Promise.all(toolConvertPromises);
+    const tools = toolConvertResults.flat();
     this.tools = tools;
 
     for (const tool of tools) {
       this.toolsMap.set(tool.function.name, tool);
     }
+  }
+
+  private async loadThread() {
+    const result = await getThreadByID({ threadID: this.threadID });
+    this.thread = result;
   }
 
   private async processSteps(

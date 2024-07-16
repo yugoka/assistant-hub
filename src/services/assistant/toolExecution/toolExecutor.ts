@@ -1,5 +1,5 @@
+import { ExecutorFunction } from "@/services/schema/openapiToTools";
 import axios, { AxiosRequestConfig, Method } from "axios";
-import { ExecutorFunction } from "./openapiToTools";
 
 /**
  * API呼び出しを実行する関数
