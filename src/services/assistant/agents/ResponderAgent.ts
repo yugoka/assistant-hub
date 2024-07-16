@@ -14,6 +14,7 @@ import {
 } from "../../schema/openapiToTools";
 import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
+import { trimMessageHistory } from "@/utils/tokenizer";
 
 const MAX_STEPS = 5;
 
@@ -23,6 +24,7 @@ export default class ResponderAgent {
   private readonly maxToolCallSteps: number;
   private readonly save: boolean;
   private readonly model?: string;
+  private inputMessages: Message[];
   private currentMessages: Message[];
   private tools: OpenAIToolWithExecutor[];
   private toolsMap: Map<string, OpenAIToolWithExecutor>;
@@ -38,7 +40,8 @@ export default class ResponderAgent {
   }: ResponderAgentParam) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     this.threadID = threadID;
-    this.currentMessages = messages;
+    this.inputMessages = messages;
+    this.currentMessages = [];
     this.maxToolCallSteps = maxSteps;
     this.save = save;
     this.tools = [];
@@ -64,16 +67,21 @@ export default class ResponderAgent {
 
   private async initialize() {
     console.log("=== Running Responder Agent ===");
-    if (!this.currentMessages.length) {
+    if (!this.inputMessages.length) {
       throw new Error("Messages array is empty");
     }
-    await Promise.all([this.initTools(), this.loadThread()]);
+    await this.loadThread();
+    await this.initMessages();
+    await this.initTools();
   }
 
   private async initTools() {
+    console.log("Initializing tools...");
+    // 直近5件を取る(現状はマジックナンバー)
     const suggestedTools = await getToolsByPrompt({
       query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
+    console.log(suggestedTools.map((tool) => [tool.name, tool.similarity]));
 
     const toolConvertPromises = suggestedTools.map(async (suggestedTool) => {
       return await convertRegisteredToolsToOpenAITools(suggestedTool);
@@ -88,8 +96,18 @@ export default class ResponderAgent {
   }
 
   private async loadThread() {
+    console.log("Loading thread...");
     const result = await getThreadByID({ threadID: this.threadID });
     this.thread = result;
+  }
+
+  private async initMessages() {
+    console.log("Initializing messages...");
+    this.currentMessages = await trimMessageHistory(
+      this.inputMessages,
+      this.thread?.maximum_initial_input_tokens || 0
+    );
+    console.log(this.currentMessages);
   }
 
   private async processSteps(
