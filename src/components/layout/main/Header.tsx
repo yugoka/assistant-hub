@@ -12,7 +12,7 @@ export function MainLayoutHeader() {
         <Sheet>
           <SheetTrigger asChild>
             <Button size="icon" variant="link">
-              <MenuIcon className="h-6 w-6" />
+              <MenuIcon className="h-5 w-5" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
