@@ -109,7 +109,10 @@ export default function ChatScreen({ threadID }: Props) {
 
   return (
     <div className="flex h-full flex-col w-full relative">
-      <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
+      <div
+        className="flex-1 overflow-auto p-4 mt-6 lg:mt-0"
+        ref={scrollContainer}
+      >
         <ThreadSettingsDialogue />
         {isLoading ? (
           <Loader />
