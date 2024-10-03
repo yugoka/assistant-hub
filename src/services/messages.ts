@@ -17,11 +17,11 @@ export const createMessage = async (newMessage: Message): Promise<Message> => {
     .select("*")
     .single();
 
-  const result = parseDBMessage(data);
-
   if (error) {
     throw error;
   }
+
+  const result = parseDBMessage(data);
 
   return result;
 };
@@ -67,13 +67,18 @@ export const getMessagesByThreadID = async ({
 };
 
 // ==============
-// メッセージを保存用に変換
+// メッセージを保存用に変換、正規化
 // ==============
 const convertMessageForDB = (message: Message): MessageForDB => {
   const toolCalls = message.role === "assistant" && message.tool_calls;
 
   return {
-    ...message,
+    id: message.id,
+    thread_id: message.thread_id,
+    role: message.role,
+    tool_call_id: message.role === "tool" ? message.tool_call_id : undefined,
+    // ↓create時は不要
+    // created_at: message.created_at,
     content: parseMessageContent(message.content) || undefined,
     tool_calls: toolCalls ? JSON.stringify(toolCalls) : undefined,
   };
