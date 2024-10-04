@@ -105,7 +105,7 @@ export default class ResponderAgent {
     console.log("Initializing messages...");
     this.currentMessages = await trimMessageHistory(
       this.inputMessages,
-      this.thread?.maximum_initial_input_tokens || 0
+      this.thread?.maximum_input_tokens || 0
     );
     console.log(this.currentMessages);
   }

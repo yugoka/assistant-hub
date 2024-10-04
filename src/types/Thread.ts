@@ -8,6 +8,6 @@ export type Thread = {
   maximum_memory_tokens: number;
   system_prompt: string;
   protected: boolean;
-  maximum_initial_input_tokens: number;
+  maximum_input_tokens: number;
   model_name?: string;
 };
