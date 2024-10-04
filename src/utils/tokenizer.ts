@@ -1,5 +1,5 @@
 import { init, Tiktoken } from "tiktoken/lite/init";
-import cl100k_base from "tiktoken/encoders/cl100k_base";
+import o200k_base from "tiktoken/encoders/o200k_base";
 // @ts-expect-error
 import wasm from "tiktoken/lite/tiktoken_bg.wasm?module";
 import { parseMessageContent } from "./message";
@@ -20,9 +20,9 @@ export const trimMessageHistory = async (
   await init((imports) => WebAssembly.instantiate(wasm, imports));
 
   const encoder = new Tiktoken(
-    cl100k_base.bpe_ranks,
-    cl100k_base.special_tokens,
-    cl100k_base.pat_str
+    o200k_base.bpe_ranks,
+    o200k_base.special_tokens,
+    o200k_base.pat_str
   );
 
   let totalTokens = 0;
