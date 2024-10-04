@@ -1,4 +1,6 @@
 import { init, Tiktoken } from "tiktoken/lite/init";
+// Vercel無料プランのedge function 1MB制限のため、古いモデルを使用
+// 別のedge functionsに移管する、Node.js関数に移管するなどを検討
 import p50k_base from "tiktoken/encoders/p50k_base";
 // @ts-expect-error
 import wasm from "tiktoken/lite/tiktoken_bg.wasm?module";
