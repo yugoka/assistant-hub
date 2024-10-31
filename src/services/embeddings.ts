@@ -1,3 +1,4 @@
+import { trimTextByMaxTokens } from "./../utils/tokenizer";
 import OpenAI from "openai";
 import { EmbeddingCreateParams } from "openai/resources";
 
@@ -13,20 +14,24 @@ export const getEmbedding = async (
   text: string,
   options?: GetEmbeddingOptions
 ): Promise<number[]> => {
+  const trimmedText = await trimTextByMaxTokens(
+    text,
+    parseInt(process.env.EMBEDDINGS_MAX_TOKENS || "") || 5160
+  );
   const model =
     options?.model ||
     process.env.EMBEDDINGS_DEFAULT_MODEL ||
-    "text-embedding-3-small";
+    "text-embedding-3-large";
   const dimensions =
     options?.dimensions ||
     parseInt(process.env.EMBEDDINGS_DEFAULT_DIMENSIONS || "") ||
-    256;
+    3072;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const result = await openai.embeddings.create({
     model,
-    input: text,
+    input: trimmedText,
     encoding_format: "float",
     dimensions,
   });
