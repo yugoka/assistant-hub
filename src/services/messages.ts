@@ -1,6 +1,13 @@
 import { Message, MessageForDB } from "@/types/Message";
 import { parseMessageContent } from "@/utils/message";
 import { createClient } from "@/utils/supabase/server";
+import {
+  ChatCompletionAssistantMessageParam,
+  ChatCompletionMessageParam,
+  ChatCompletionSystemMessageParam,
+  ChatCompletionToolMessageParam,
+  ChatCompletionUserMessageParam,
+} from "openai/resources";
 
 // ==============
 // メッセージ作成
@@ -119,3 +126,41 @@ const parseDBMessage = (messageForDB: MessageForDB): Message => {
     throw new Error("Invalid Message role:", messageForDB.role);
   }
 };
+
+// ==============
+// 独自拡張のMessagesをOpenAI互換の形式に変換
+// ==============
+export function convertToOpenAIMessages(
+  messages: Message[]
+): ChatCompletionMessageParam[] {
+  return messages.map((msg): ChatCompletionMessageParam => {
+    const baseMessage = {
+      role: msg.role,
+      content: msg.content ?? null,
+    };
+
+    switch (msg.role) {
+      case "system":
+        return baseMessage as ChatCompletionSystemMessageParam;
+
+      case "user":
+        return {
+          ...baseMessage,
+          name: msg.name,
+        } as ChatCompletionUserMessageParam;
+
+      case "assistant":
+        return {
+          ...baseMessage,
+          tool_calls: msg.tool_calls ?? null,
+          name: msg.name,
+        } as ChatCompletionAssistantMessageParam;
+
+      case "tool":
+        return {
+          ...baseMessage,
+          tool_call_id: msg.tool_call_id,
+        } as ChatCompletionToolMessageParam;
+    }
+  });
+}
