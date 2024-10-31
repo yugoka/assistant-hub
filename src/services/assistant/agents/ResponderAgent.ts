@@ -113,7 +113,6 @@ export default class ResponderAgent {
       this.inputMessages,
       this.thread?.maximum_input_tokens || 0
     );
-    console.log(this.currentMessages);
   }
 
   private async processSteps(
@@ -156,7 +155,7 @@ export default class ResponderAgent {
 
       // ツール実行結果を送信
       toolCallResults.forEach((result) =>
-        controller.enqueue(JSON.stringify(result) + "\n")
+        controller.enqueue(JSON.stringify(result.message) + "\n")
       );
 
       // ツール呼び出し・新規メッセージの保存
@@ -244,6 +243,19 @@ export default class ResponderAgent {
           ? this.tools
           : undefined;
 
+      for (const msg of this.currentMessages) {
+        if (!msg.role) {
+          console.error("======");
+          console.error("======");
+          console.error("======");
+          console.log(msg);
+          console.error("======");
+          console.error("======");
+          console.error("======");
+          console.error("======");
+        }
+      }
+
       const response = await this.openai.chat.completions.create({
         model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
         stream: true,
@@ -252,6 +264,9 @@ export default class ResponderAgent {
       });
       return response.toReadableStream();
     } catch (e) {
+      console.error("");
+      console.error("===== Messages When Error Occured ====");
+      console.error("");
       console.error(this.currentMessages);
       throw new Error(`${e}`);
     }
