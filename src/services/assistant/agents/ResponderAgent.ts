@@ -4,7 +4,7 @@ import { ChatCompletionChunk } from "openai/resources";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
-import { createMessage } from "@/services/messages";
+import { convertToOpenAIMessages, createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
 import { getToolsByPrompt } from "@/services/tools";
 import { stringfyMessagesForLM } from "@/utils/message";
@@ -15,8 +15,14 @@ import {
 import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
 import { trimMessageHistory } from "@/utils/tokenizer";
+import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
 
 const MAX_STEPS = 5;
+
+type ToolExecutionResult = {
+  message: ToolMessage;
+  executionDetail: CreateToolCallInput;
+};
 
 export default class ResponderAgent {
   private readonly openai: OpenAI;
@@ -107,15 +113,18 @@ export default class ResponderAgent {
       this.inputMessages,
       this.thread?.maximum_input_tokens || 0
     );
-    console.log(this.currentMessages);
   }
 
   private async processSteps(
     controller: ReadableStreamDefaultController<string>
   ) {
+    // 今回のやりとりで保存するメッセージ
     const messagesToSave: Message[] = [
       this.currentMessages[this.currentMessages.length - 1],
     ];
+
+    // 今回のやりとりで保存するツール呼び出し
+    const toolCallsToSave: CreateToolCallInput[] = [];
 
     while (this.steps < this.maxToolCallSteps) {
       console.log(
@@ -143,19 +152,35 @@ export default class ResponderAgent {
       }
 
       const toolCallResults = await this.handleToolCalls(newMessage);
+
+      // ツール実行結果を送信
       toolCallResults.forEach((result) =>
-        controller.enqueue(JSON.stringify(result) + "\n")
+        controller.enqueue(JSON.stringify(result.message) + "\n")
       );
 
+      // ツール呼び出し・新規メッセージの保存
       if (this.save) {
-        messagesToSave.push(...toolCallResults);
+        const toolMessages = toolCallResults.map((result) => result.message);
+        const toolCalls = toolCallResults.map(
+          (result) => result.executionDetail
+        );
+        messagesToSave.push(...toolMessages);
+        toolCallsToSave.push(...toolCalls);
       }
 
-      this.currentMessages.push(newMessage, ...toolCallResults);
+      this.currentMessages.push(
+        newMessage,
+        ...toolCallResults.map((result) => result.message)
+      );
       this.steps += 1;
     }
 
-    waitUntil(this.saveMessages(messagesToSave));
+    waitUntil(
+      Promise.all([
+        this.saveMessages(messagesToSave),
+        this.saveToolCalls(toolCallsToSave),
+      ])
+    );
   }
 
   private async processResponse(
@@ -197,7 +222,9 @@ export default class ResponderAgent {
     return newChunkObject.choices[0].finish_reason === "tool_calls";
   }
 
-  private async handleToolCalls(newMessage: Message): Promise<ToolMessage[]> {
+  private async handleToolCalls(
+    newMessage: Message
+  ): Promise<ToolExecutionResult[]> {
     const toolCalls =
       newMessage.role === "assistant" && newMessage.tool_calls
         ? newMessage.tool_calls
@@ -210,17 +237,39 @@ export default class ResponderAgent {
   }
 
   private async fetch() {
-    const tools =
-      this.steps < this.maxToolCallSteps && this.tools.length
-        ? this.tools
-        : undefined;
-    const response = await this.openai.chat.completions.create({
-      model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
-      stream: true,
-      messages: this.currentMessages,
-      tools,
-    });
-    return response.toReadableStream();
+    try {
+      const tools =
+        this.steps < this.maxToolCallSteps && this.tools.length
+          ? this.tools
+          : undefined;
+
+      for (const msg of this.currentMessages) {
+        if (!msg.role) {
+          console.error("======");
+          console.error("======");
+          console.error("======");
+          console.log(msg);
+          console.error("======");
+          console.error("======");
+          console.error("======");
+          console.error("======");
+        }
+      }
+
+      const response = await this.openai.chat.completions.create({
+        model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
+        stream: true,
+        messages: convertToOpenAIMessages(this.currentMessages),
+        tools,
+      });
+      return response.toReadableStream();
+    } catch (e) {
+      console.error("");
+      console.error("===== Messages When Error Occured ====");
+      console.error("");
+      console.error(this.currentMessages);
+      throw new Error(`${e}`);
+    }
   }
 
   private getToolByName(name: string): OpenAIToolWithExecutor | undefined {
@@ -229,8 +278,9 @@ export default class ResponderAgent {
 
   private async executeTools(
     toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[]
-  ): Promise<ToolMessage[]> {
+  ): Promise<ToolExecutionResult[]> {
     const promises = toolCalls.map(async (toolCall) => {
+      const startTime = performance.now();
       const calledTool = this.getToolByName(toolCall.function.name);
       const toolCallResult: ToolMessage = {
         id: uuidv4(),
@@ -245,15 +295,27 @@ export default class ResponderAgent {
         const result = await calledTool.execute(toolCall.function.arguments);
         toolCallResult.content = JSON.stringify(result, null, 2);
       }
-      return toolCallResult;
+
+      const endTime = performance.now();
+
+      const executionDetail: CreateToolCallInput = {
+        tool_id: calledTool?.baseTool.id || "",
+        tool_call_id: toolCall.id,
+        execution_time: Math.floor(endTime - startTime),
+        contextMessages: this.currentMessages,
+      };
+
+      return { message: toolCallResult, executionDetail };
     });
 
-    const result: ToolMessage[] = await Promise.all(promises);
+    const result: ToolExecutionResult[] = await Promise.all(promises);
 
     return result;
   }
 
   private async saveMessages(newMessages: Message[]) {
+    if (!this.save) return;
+
     try {
       for await (const message of newMessages) {
         const newMessage = message;
@@ -284,6 +346,19 @@ export default class ResponderAgent {
       }
     } catch (error) {
       console.error("Failed to save message:", error);
+    }
+  }
+
+  private async saveToolCalls(newToolCalls: CreateToolCallInput[]) {
+    if (!this.save) return;
+    try {
+      const promises = newToolCalls.map(async (toolCall) => {
+        await createToolCall(toolCall);
+        console.log("[ToolCall Saved]", toolCall.tool_call_id);
+      });
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Failed to save toolCall:", error);
     }
   }
 }

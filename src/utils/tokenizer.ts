@@ -11,6 +11,38 @@ export const countTokens = (text: string, encoder: Tiktoken) => {
   return encoder.encode(text).length;
 };
 
+export const initializeEncoder = async (): Promise<Tiktoken> => {
+  await init((imports) => WebAssembly.instantiate(wasm, imports));
+  return new Tiktoken(
+    p50k_base.bpe_ranks,
+    p50k_base.special_tokens,
+    p50k_base.pat_str
+  );
+};
+
+export const trimTextByMaxTokens = async (
+  text: string,
+  maxTokens: number
+): Promise<string> => {
+  if (maxTokens === -1) {
+    return text;
+  }
+
+  const encoder = await initializeEncoder();
+  const encoded = encoder.encode(text);
+
+  if (encoded.length <= maxTokens) {
+    return text;
+  }
+
+  // トークン数を指定の長さまで切り詰める
+  const trimmedEncoded = encoded.slice(0, maxTokens);
+  const decoded = encoder.decode(trimmedEncoded);
+
+  // デコードされたUint8Arrayをテキストデコーダーで文字列に変換
+  return new TextDecoder().decode(decoded);
+};
+
 export const trimMessageHistory = async (
   messages: Message[],
   maxTokens: number
@@ -19,13 +51,7 @@ export const trimMessageHistory = async (
     return messages;
   }
 
-  await init((imports) => WebAssembly.instantiate(wasm, imports));
-
-  const encoder = new Tiktoken(
-    p50k_base.bpe_ranks,
-    p50k_base.special_tokens,
-    p50k_base.pat_str
-  );
+  const encoder = await initializeEncoder();
 
   let totalTokens = 0;
   const trimmedMessages = [];
