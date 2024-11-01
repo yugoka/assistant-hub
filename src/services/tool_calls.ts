@@ -11,7 +11,7 @@ export interface CreateToolCallInput {
   id?: string;
   tool_id: string;
   tool_call_id: string;
-  execution_time: number;
+  execution_time?: number;
   contextMessages: Message[];
 }
 export const createToolCall = async ({
