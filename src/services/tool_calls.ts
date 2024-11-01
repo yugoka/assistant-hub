@@ -10,7 +10,7 @@ import { getEmbedding } from "./embeddings";
 export interface CreateToolCallInput {
   tool_id: string;
   tool_call_id: string;
-  execution_time: number;
+  execution_time?: number;
   contextMessages: Message[];
 }
 export const createToolCall = async ({

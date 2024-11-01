@@ -8,7 +8,9 @@ import { NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+// ==============
 // ツール作成
+// ==============
 export async function POST(req: Request) {
   try {
     const reqBody = await req.json();

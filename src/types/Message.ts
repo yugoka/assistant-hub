@@ -1,8 +1,6 @@
 import {
   ChatCompletionAssistantMessageParam,
   ChatCompletionChunk,
-  ChatCompletionFunctionMessageParam,
-  ChatCompletionMessageParam,
   ChatCompletionMessageToolCall,
   ChatCompletionSystemMessageParam,
   ChatCompletionToolMessageParam,
