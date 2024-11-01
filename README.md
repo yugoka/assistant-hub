@@ -1,5 +1,6 @@
 ## 動的ツール検索・WebAPI公開に対応したLLMクライアント
-<img width="600" alt="スクリーンショット 2024-11-01 12 55 47" src="https://github.com/user-attachments/assets/c7ca6684-20a7-44e2-b7ce-b2afd022866e" align="center">
+<img width="1088" alt="スクリーンショット 2024-11-01 13 07 04" src="https://github.com/user-attachments/assets/47c670b7-9271-4ed9-9da8-ce9617e3ffca">
+
 
 ## 💡 コンテキストベースの動的ツール検索
 - 会話の文脈から最適なツールを自動検索
