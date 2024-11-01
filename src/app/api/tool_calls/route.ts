@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     const reqBody = await req.json();
 
     const params: CreateToolCallInput = {
-      id: reqBody.id,
       tool_id: reqBody.tool_id,
       tool_call_id: reqBody.tool_call_id,
       execution_time: reqBody.execution_time,
