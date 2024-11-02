@@ -378,7 +378,11 @@ export default class ResponderAgent {
     try {
       const promises = newToolCalls.map(async (toolCall) => {
         await createToolCall(toolCall);
-        console.log("[ToolCall Saved]", toolCall.tool_call_id);
+        console.log(
+          "[ToolCall Saved]",
+          toolCall.tool_call_id,
+          ` | ${toolCall.execution_time}ms`
+        );
       });
       await Promise.all(promises);
     } catch (error) {
