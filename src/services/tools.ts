@@ -181,7 +181,7 @@ export const getToolsByEmbedding = async ({
     });
 
   if (!Array.isArray(data)) {
-    throw new Error("Data is not array");
+    throw new Error(`Tools Search result is not array: ${data}`);
   }
 
   const filteredTools: ToolWithSimilarity[] = [];
