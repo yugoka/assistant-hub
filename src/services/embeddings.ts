@@ -1,6 +1,8 @@
+import { Message } from "@/types/Message";
 import { trimTextByMaxTokens } from "./../utils/tokenizer";
 import OpenAI from "openai";
 import { EmbeddingCreateParams } from "openai/resources";
+import { stringfyMessagesForLM } from "@/utils/message";
 
 export type GetEmbeddingOptions = {
   model?: EmbeddingCreateParams["model"];
@@ -84,4 +86,14 @@ export const getAndAverageEmbeddings = async (
 ): Promise<number[]> => {
   const embeddings = await getEmbeddings(textList, options);
   return averageEmbeddings(embeddings);
+};
+
+// ==============
+// Message[] からベクトルを得る
+// ==============
+export const getEmbeddingFromMessages = async (
+  messages: Message[]
+): Promise<number[]> => {
+  const messagesText = stringfyMessagesForLM(messages);
+  return await getEmbedding(messagesText);
 };

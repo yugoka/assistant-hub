@@ -78,17 +78,32 @@ export default class ResponderAgent {
       throw new Error("Messages array is empty");
     }
 
+    const startTime = performance.now();
     await this.loadThread();
     await this.initMessages();
     await this.initTools();
+    console.log(
+      `[Performance] Initialization took ${(
+        performance.now() - startTime
+      ).toFixed(0)} ms`
+    );
   }
 
   private async initTools() {
     const startTime = performance.now();
     console.log("Initializing tools...");
-    // 直近5件を取る(現状はマジックナンバー)
+    // 直近n件を取る
+    // TODO: 環境変数ではなく設定画面から取れるようにする
+    const embeddingContextWindow =
+      parseInt(process.env.AGENT_TOOL_SEARCH_MAX_CONTEXT_WINDOW || "") || 5;
+
+    const context =
+      embeddingContextWindow === -1
+        ? this.currentMessages
+        : this.currentMessages.slice(-embeddingContextWindow);
+
     const suggestedTools = await getToolsByPrompt({
-      query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
+      query: stringfyMessagesForLM(context) || "",
     });
     console.log(suggestedTools.map((tool) => [tool.name, tool.similarity]));
 
