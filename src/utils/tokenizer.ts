@@ -1,14 +1,26 @@
-import { getEncoding, Tiktoken, TiktokenEncoding } from "js-tiktoken";
+import { Tiktoken, TiktokenBPE } from "js-tiktoken/lite";
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "./message";
 
-export const countTokens = (text: string, encoder: Tiktoken): number => {
-  return encoder.encode(text).length;
+let ranksCache: TiktokenBPE | null = null;
+
+const loadRanks = async (): Promise<TiktokenBPE> => {
+  if (!ranksCache) {
+    const { default: ranks } = await import("./tokenizer-ranks");
+    ranksCache = ranks;
+  }
+  return ranksCache;
 };
 
-const encoder = getEncoding(
-  (process.env.TOKENIZER_MODEL as TiktokenEncoding) || "cl100k_base"
-);
+const initializeTokenizer = async () => {
+  const ranks = await loadRanks();
+  return new Tiktoken(ranks);
+};
+
+export const countTokens = async (text: string): Promise<number> => {
+  const tokenizer = await initializeTokenizer();
+  return tokenizer.encode(text).length;
+};
 
 export const trimTextByMaxTokens = async (
   text: string,
@@ -18,7 +30,8 @@ export const trimTextByMaxTokens = async (
     return text;
   }
 
-  const encoded = encoder.encode(text);
+  const tokenizer = await initializeTokenizer();
+  const encoded = tokenizer.encode(text);
 
   if (encoded.length <= maxTokens) {
     return text;
@@ -26,7 +39,7 @@ export const trimTextByMaxTokens = async (
 
   // トークン数を指定の長さまで切り詰める
   const trimmedEncoded = encoded.slice(0, maxTokens);
-  const decoded = encoder.decode(trimmedEncoded);
+  const decoded = tokenizer.decode(trimmedEncoded);
 
   return decoded;
 };
@@ -42,12 +55,13 @@ export const trimMessageHistory = async (
   let totalTokens = 0;
   const trimmedMessages = [];
 
+  const tokenizer = await initializeTokenizer();
+
   // 最新のメッセージから順に処理
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    const messageTokens = countTokens(
-      parseMessageContent(message.content) || "",
-      encoder
+    const messageTokens = await countTokens(
+      parseMessageContent(message.content) || ""
     );
 
     if (totalTokens + messageTokens <= maxTokens) {
