@@ -1,24 +1,14 @@
-import { init, Tiktoken } from "tiktoken/lite/init";
-// Vercel無料プランのedge function 1MB制限のため、古いモデルを使用
-// 別のedge functionsに移管する、Node.js関数に移管するなどを検討
-import p50k_base from "tiktoken/encoders/p50k_base";
-// @ts-expect-error
-import wasm from "tiktoken/lite/tiktoken_bg.wasm?module";
-import { parseMessageContent } from "./message";
+import { getEncoding, Tiktoken, TiktokenEncoding } from "js-tiktoken";
 import { Message } from "@/types/Message";
+import { parseMessageContent } from "./message";
 
-export const countTokens = (text: string, encoder: Tiktoken) => {
+export const countTokens = (text: string, encoder: Tiktoken): number => {
   return encoder.encode(text).length;
 };
 
-export const initializeEncoder = async (): Promise<Tiktoken> => {
-  await init((imports) => WebAssembly.instantiate(wasm, imports));
-  return new Tiktoken(
-    p50k_base.bpe_ranks,
-    p50k_base.special_tokens,
-    p50k_base.pat_str
-  );
-};
+const encoder = getEncoding(
+  (process.env.TOKENIZER_MODEL as TiktokenEncoding) || "cl100k_base"
+);
 
 export const trimTextByMaxTokens = async (
   text: string,
@@ -28,7 +18,6 @@ export const trimTextByMaxTokens = async (
     return text;
   }
 
-  const encoder = await initializeEncoder();
   const encoded = encoder.encode(text);
 
   if (encoded.length <= maxTokens) {
@@ -39,8 +28,7 @@ export const trimTextByMaxTokens = async (
   const trimmedEncoded = encoded.slice(0, maxTokens);
   const decoded = encoder.decode(trimmedEncoded);
 
-  // デコードされたUint8Arrayをテキストデコーダーで文字列に変換
-  return new TextDecoder().decode(decoded);
+  return decoded;
 };
 
 export const trimMessageHistory = async (
@@ -51,11 +39,10 @@ export const trimMessageHistory = async (
     return messages;
   }
 
-  const encoder = await initializeEncoder();
-
   let totalTokens = 0;
   const trimmedMessages = [];
 
+  // 最新のメッセージから順に処理
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     const messageTokens = countTokens(
@@ -71,8 +58,9 @@ export const trimMessageHistory = async (
     }
   }
 
+  // 少なくとも1つのメッセージは残す
   if (!trimmedMessages.length) {
-    return [messages[trimmedMessages.length - 1]];
+    return [messages[messages.length - 1]];
   }
   return trimmedMessages;
 };
