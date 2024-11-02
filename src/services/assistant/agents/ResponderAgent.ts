@@ -6,8 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { convertToOpenAIMessages, createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
-import { getToolsByPrompt } from "@/services/tools";
-import { stringfyMessagesForLM } from "@/utils/message";
+import { getToolsByEmbedding, getToolsByPrompt } from "@/services/tools";
 import {
   convertRegisteredToolsToOpenAITools,
   OpenAIToolWithExecutor,
@@ -16,6 +15,7 @@ import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
 import { trimMessageHistory } from "@/utils/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
+import { getEmbedding, getEmbeddingFromMessages } from "@/services/embeddings";
 
 const MAX_STEPS = 5;
 
@@ -32,6 +32,7 @@ export default class ResponderAgent {
   private readonly model?: string;
   private inputMessages: Message[];
   private currentMessages: Message[];
+  private contextEmbedding: number[];
   private tools: OpenAIToolWithExecutor[];
   private toolsMap: Map<string, OpenAIToolWithExecutor>;
   private thread: Thread | null;
@@ -56,6 +57,7 @@ export default class ResponderAgent {
     this.steps = 0;
     this.model = model;
     this.thread = null;
+    this.contextEmbedding = [];
   }
 
   public async run() {
@@ -79,43 +81,71 @@ export default class ResponderAgent {
     }
 
     const startTime = performance.now();
-
-    await this.loadThread();
-    const loadThreadTime = performance.now();
+    // 第一段階: スレッド情報、過去ログのembedding
+    await Promise.all([this.loadThread(), this.initEmbedding()]);
     console.log(
-      `[Performance] loadThread took ${(loadThreadTime - startTime).toFixed(
+      `[Performance] 1st step took ${(performance.now() - startTime).toFixed(
         0
       )} ms`
     );
 
-    await this.initMessages();
-    const initMessagesTime = performance.now();
+    // 第二段階: フィルタ済みメッセージ、ツールリスト
+    await Promise.all([this.initMessages(), this.initTools()]);
     console.log(
-      `[Performance] initMessages took ${(
-        initMessagesTime - loadThreadTime
-      ).toFixed(0)} ms`
+      `[Performance] 2nd step took ${(performance.now() - startTime).toFixed(
+        0
+      )} ms`
+    );
+  }
+
+  private async loadThread() {
+    const startTime = performance.now();
+    console.log("Loading thread...");
+    const result = await getThreadByID({ threadID: this.threadID });
+    this.thread = result;
+    console.log(
+      `[Performance] loadThread took ${(performance.now() - startTime).toFixed(
+        0
+      )} ms`
+    );
+  }
+
+  private async initEmbedding() {
+    const startTime = performance.now();
+
+    const embeddingContextWindow =
+      parseInt(process.env.AGENT_TOOL_SEARCH_MAX_CONTEXT_WINDOW || "") || 5;
+
+    this.contextEmbedding = await getEmbeddingFromMessages(
+      embeddingContextWindow === -1
+        ? this.inputMessages
+        : this.inputMessages.slice(-embeddingContextWindow)
     );
 
-    await this.initTools();
-    const initToolsTime = performance.now();
-    console.log(
-      `[Performance] initTools took ${(
-        initToolsTime - initMessagesTime
-      ).toFixed(0)} ms`
-    );
+    if (!this.contextEmbedding.length) {
+      throw new Error("Context embedding is empty");
+    }
 
     console.log(
-      `[Performance] Total time: ${(initToolsTime - startTime).toFixed(0)} ms`
+      `[Performance] initEmbedding took ${(
+        performance.now() - startTime
+      ).toFixed(0)} ms`
     );
   }
 
   private async initTools() {
+    const startTime = performance.now();
     console.log("Initializing tools...");
+
     // 直近5件を取る(現状はマジックナンバー)
-    const suggestedTools = await getToolsByPrompt({
-      query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
+    const suggestedTools = await getToolsByEmbedding({
+      embedding: this.contextEmbedding,
+      // TODO: similarityThresholdなどの設定追加
     });
-    console.log(suggestedTools.map((tool) => [tool.name, tool.similarity]));
+    console.log(
+      "[Tool Search]\n",
+      suggestedTools.map((tool) => [tool.name, tool.similarity])
+    );
 
     const toolConvertPromises = suggestedTools.map(async (suggestedTool) => {
       return await convertRegisteredToolsToOpenAITools(suggestedTool);
@@ -127,19 +157,24 @@ export default class ResponderAgent {
     for (const tool of tools) {
       this.toolsMap.set(tool.function.name, tool);
     }
-  }
-
-  private async loadThread() {
-    console.log("Loading thread...");
-    const result = await getThreadByID({ threadID: this.threadID });
-    this.thread = result;
+    console.log(
+      `[Performance] initTools took ${(performance.now() - startTime).toFixed(
+        0
+      )} ms`
+    );
   }
 
   private async initMessages() {
+    const startTime = performance.now();
     console.log("Initializing messages...");
     this.currentMessages = await trimMessageHistory(
       this.inputMessages,
       this.thread?.maximum_input_tokens || 0
+    );
+    console.log(
+      `[Performance] initMessages took ${(
+        performance.now() - startTime
+      ).toFixed(0)} ms`
     );
   }
 
@@ -271,19 +306,6 @@ export default class ResponderAgent {
           ? this.tools
           : undefined;
 
-      for (const msg of this.currentMessages) {
-        if (!msg.role) {
-          console.error("======");
-          console.error("======");
-          console.error("======");
-          console.log(msg);
-          console.error("======");
-          console.error("======");
-          console.error("======");
-          console.error("======");
-        }
-      }
-
       const response = await this.openai.chat.completions.create({
         model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
         stream: true,
@@ -366,9 +388,11 @@ export default class ResponderAgent {
         console.log(
           "[Message Saved]",
           message.role,
-          message.content || "",
+          message.role === "tool"
+            ? `(${message.content.length} letters)`
+            : message.content || "",
           message.role === "assistant" && message.tool_calls?.length
-            ? `(${message.tool_calls.length} tool calls)`
+            ? `(${message.tool_calls.length} tool call(s))`
             : ""
         );
       }
