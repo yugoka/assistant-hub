@@ -1,6 +1,8 @@
+import { Message } from "@/types/Message";
 import { trimTextByMaxTokens } from "./../utils/tokenizer";
 import OpenAI from "openai";
 import { EmbeddingCreateParams } from "openai/resources";
+import { stringfyMessagesForLM } from "@/utils/message";
 
 export type GetEmbeddingOptions = {
   model?: EmbeddingCreateParams["model"];
@@ -18,25 +20,26 @@ export const getEmbedding = async (
     text,
     parseInt(process.env.EMBEDDINGS_MAX_TOKENS || "") || 5160
   );
+
   const model =
     options?.model ||
     process.env.EMBEDDINGS_DEFAULT_MODEL ||
-    "text-embedding-3-large";
+    "text-embedding-3-small";
   const dimensions =
     options?.dimensions ||
     parseInt(process.env.EMBEDDINGS_DEFAULT_DIMENSIONS || "") ||
-    3072;
+    1536;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const result = await openai.embeddings.create({
     model,
     input: trimmedText,
-    encoding_format: "float",
+    encoding_format: "base64",
     dimensions,
   });
 
-  const embedding = result.data[0].embedding;
+  const embedding = base64ToFloat32ArrayNode(`${result.data[0].embedding}`);
   return embedding;
 };
 
@@ -84,4 +87,30 @@ export const getAndAverageEmbeddings = async (
 ): Promise<number[]> => {
   const embeddings = await getEmbeddings(textList, options);
   return averageEmbeddings(embeddings);
+};
+
+// ==============
+// Message[] からベクトルを得る
+// ==============
+export const getEmbeddingFromMessages = async (
+  messages: Message[]
+): Promise<number[]> => {
+  const messagesText = stringfyMessagesForLM(messages);
+  return await getEmbedding(messagesText);
+};
+
+// embedding apiのレスポンス変換用(base64 -> float32)
+export const base64ToFloat32ArrayNode = (base64String: string): number[] => {
+  // Base64文字列をバッファに変換
+  const buffer = Buffer.from(base64String, "base64");
+
+  // バッファをFloat32Arrayに変換
+  const floatArray = new Float32Array(
+    buffer.buffer,
+    buffer.byteOffset,
+    buffer.length / Float32Array.BYTES_PER_ELEMENT
+  );
+
+  // Float32ArrayをNumberの配列に変換
+  return Array.from(floatArray);
 };

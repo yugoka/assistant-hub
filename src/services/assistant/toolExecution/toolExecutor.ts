@@ -34,6 +34,7 @@ export async function executeApiCall(
         delete args[key];
       }
     }
+    console.log(`[ToolExecutor] ${method} ${url}`);
 
     // クエリパラメータの追加またはリクエストボディの設定
     if (["GET", "DELETE"].includes(method.toUpperCase())) {
