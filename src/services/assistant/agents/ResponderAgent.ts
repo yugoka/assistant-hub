@@ -73,12 +73,40 @@ export default class ResponderAgent {
 
   private async initialize() {
     console.log("=== Running Responder Agent ===");
+
     if (!this.inputMessages.length) {
       throw new Error("Messages array is empty");
     }
+
+    const startTime = performance.now();
+
     await this.loadThread();
+    const loadThreadTime = performance.now();
+    console.log(
+      `[Performance] loadThread took ${(loadThreadTime - startTime).toFixed(
+        0
+      )} ms`
+    );
+
     await this.initMessages();
+    const initMessagesTime = performance.now();
+    console.log(
+      `[Performance] initMessages took ${(
+        initMessagesTime - loadThreadTime
+      ).toFixed(0)} ms`
+    );
+
     await this.initTools();
+    const initToolsTime = performance.now();
+    console.log(
+      `[Performance] initTools took ${(
+        initToolsTime - initMessagesTime
+      ).toFixed(0)} ms`
+    );
+
+    console.log(
+      `[Performance] Total time: ${(initToolsTime - startTime).toFixed(0)} ms`
+    );
   }
 
   private async initTools() {
