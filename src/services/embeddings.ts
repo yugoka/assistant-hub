@@ -9,6 +9,24 @@ export type GetEmbeddingOptions = {
   dimensions?: number;
 };
 
+// Node.js環境用のバージョン
+export const base64ToFloat32ArrayNode = (base64String: string): number[] => {
+  console.time("embedding convert");
+  // Base64文字列をバッファに変換
+  const buffer = Buffer.from(base64String, "base64");
+
+  // バッファをFloat32Arrayに変換
+  const floatArray = new Float32Array(
+    buffer.buffer,
+    buffer.byteOffset,
+    buffer.length / Float32Array.BYTES_PER_ELEMENT
+  );
+
+  console.timeEnd("embedding convert");
+  // Float32ArrayをNumberの配列に変換
+  return Array.from(floatArray);
+};
+
 // ==============
 // 入力文(ひとつ)をベクトル化する
 // ==============
@@ -16,29 +34,38 @@ export const getEmbedding = async (
   text: string,
   options?: GetEmbeddingOptions
 ): Promise<number[]> => {
+  console.time("trim text");
   const trimmedText = await trimTextByMaxTokens(
     text,
     parseInt(process.env.EMBEDDINGS_MAX_TOKENS || "") || 5160
   );
+  console.timeEnd("trim text");
+
+  console.time("embedding init");
   const model =
     options?.model ||
     process.env.EMBEDDINGS_DEFAULT_MODEL ||
-    "text-embedding-3-large";
+    "text-embedding-3-small";
   const dimensions =
     options?.dimensions ||
     parseInt(process.env.EMBEDDINGS_DEFAULT_DIMENSIONS || "") ||
-    3072;
+    1536;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  console.timeEnd("embedding init");
+
+  console.time("embedding run");
 
   const result = await openai.embeddings.create({
     model,
     input: trimmedText,
-    encoding_format: "float",
+    encoding_format: "base64",
     dimensions,
   });
+  console.timeEnd("embedding run");
 
-  const embedding = result.data[0].embedding;
+  const embedding = base64ToFloat32ArrayNode(`${result.data[0].embedding}`);
   return embedding;
 };
 
