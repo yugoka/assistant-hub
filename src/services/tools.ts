@@ -154,33 +154,29 @@ export const getToolByID = async ({
   return data || null;
 };
 
-// ==============
-// プロンプトによるツール取得
-// あらかじめベクトル化したツール使用例から類似性を計算
-// ==============
-export interface GetToolsByPromptOptions {
-  query: string;
+interface ToolSearchBaseOptions {
   similarityThreshold?: number;
   minTools?: number;
   maxTools?: number;
 }
-export const getToolsByPrompt = async ({
-  query,
+
+// ==============
+// embeddingによる類似ツール取得
+// ==============
+export interface GetToolsByEmbeddingOptions extends ToolSearchBaseOptions {
+  embedding: number[];
+}
+export const getToolsByEmbedding = async ({
+  embedding,
   similarityThreshold = 0.25,
   minTools = 0,
   maxTools = 5,
-}: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {
-  if (!query) {
-    throw new Error("Prompt is not defined");
-  }
-
-  const queryEmbedding = await getEmbedding(query);
-
+}: GetToolsByEmbeddingOptions) => {
   const supabase = createClient();
 
   const { data, error }: PostgrestResponse<ToolWithSimilarity> =
     await supabase.rpc("match_tools", {
-      query_embedding: queryEmbedding,
+      query_embedding: embedding,
       match_count: maxTools,
     });
 
@@ -212,6 +208,31 @@ export const getToolsByPrompt = async ({
   }
 
   return filteredTools || [];
+};
+
+// ==============
+// プロンプトによるツール取得
+// ==============
+export interface GetToolsByPromptOptions extends ToolSearchBaseOptions {
+  query: string;
+}
+export const getToolsByPrompt = async ({
+  query,
+  similarityThreshold = 0.25,
+  minTools = 0,
+  maxTools = 5,
+}: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {
+  if (!query) {
+    throw new Error("Prompt is not defined");
+  }
+
+  const embedding = await getEmbedding(query);
+  return await getToolsByEmbedding({
+    similarityThreshold,
+    minTools,
+    maxTools,
+    embedding,
+  });
 };
 
 // ==============
