@@ -6,7 +6,8 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
 import { convertToOpenAIMessages, createMessage } from "@/services/messages";
 import { waitUntil } from "@vercel/functions";
-import { getToolsByEmbedding, getToolsByPrompt } from "@/services/tools";
+import { getToolsByPrompt } from "@/services/tools";
+import { stringfyMessagesForLM } from "@/utils/message";
 import {
   convertRegisteredToolsToOpenAITools,
   OpenAIToolWithExecutor,
@@ -15,7 +16,6 @@ import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
 import { trimMessageHistory } from "@/utils/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
-import { getEmbedding, getEmbeddingFromMessages } from "@/services/embeddings";
 
 const MAX_STEPS = 5;
 
@@ -32,7 +32,6 @@ export default class ResponderAgent {
   private readonly model?: string;
   private inputMessages: Message[];
   private currentMessages: Message[];
-  private contextEmbedding: number[];
   private tools: OpenAIToolWithExecutor[];
   private toolsMap: Map<string, OpenAIToolWithExecutor>;
   private thread: Thread | null;
@@ -57,7 +56,6 @@ export default class ResponderAgent {
     this.steps = 0;
     this.model = model;
     this.thread = null;
-    this.contextEmbedding = [];
   }
 
   public async run() {
@@ -80,72 +78,19 @@ export default class ResponderAgent {
       throw new Error("Messages array is empty");
     }
 
-    const startTime = performance.now();
-    // 第一段階: スレッド情報、過去ログのembedding
-    await Promise.all([this.loadThread(), this.initEmbedding()]);
-    console.log(
-      `[Performance] 1st step took ${(performance.now() - startTime).toFixed(
-        0
-      )} ms`
-    );
-
-    // 第二段階: フィルタ済みメッセージ、ツールリスト
-    await Promise.all([this.initMessages(), this.initTools()]);
-    console.log(
-      `[Performance] 2nd step took ${(performance.now() - startTime).toFixed(
-        0
-      )} ms`
-    );
-  }
-
-  private async loadThread() {
-    const startTime = performance.now();
-    console.log("Loading thread...");
-    const result = await getThreadByID({ threadID: this.threadID });
-    this.thread = result;
-    console.log(
-      `[Performance] loadThread took ${(performance.now() - startTime).toFixed(
-        0
-      )} ms`
-    );
-  }
-
-  private async initEmbedding() {
-    const startTime = performance.now();
-
-    const embeddingContextWindow =
-      parseInt(process.env.AGENT_TOOL_SEARCH_MAX_CONTEXT_WINDOW || "") || 5;
-
-    this.contextEmbedding = await getEmbeddingFromMessages(
-      embeddingContextWindow === -1
-        ? this.inputMessages
-        : this.inputMessages.slice(-embeddingContextWindow)
-    );
-
-    if (!this.contextEmbedding.length) {
-      throw new Error("Context embedding is empty");
-    }
-
-    console.log(
-      `[Performance] initEmbedding took ${(
-        performance.now() - startTime
-      ).toFixed(0)} ms`
-    );
+    await this.loadThread();
+    await this.initMessages();
+    await this.initTools();
   }
 
   private async initTools() {
     const startTime = performance.now();
     console.log("Initializing tools...");
-
     // 直近5件を取る(現状はマジックナンバー)
-    const suggestedTools = await getToolsByEmbedding({
-      embedding: this.contextEmbedding,
-      // TODO: similarityThresholdなどの設定追加
+    const suggestedTools = await getToolsByPrompt({
+      query: stringfyMessagesForLM(this.currentMessages.slice(-5)) || "",
     });
-    console.log(
-      "[Tool Search]\n",
-      suggestedTools.map((tool) => [tool.name, tool.similarity])
-    );
+    console.log(suggestedTools.map((tool) => [tool.name, tool.similarity]));
 
     const toolConvertPromises = suggestedTools.map(async (suggestedTool) => {
       return await convertRegisteredToolsToOpenAITools(suggestedTool);
@@ -159,6 +104,18 @@ export default class ResponderAgent {
     }
     console.log(
       `[Performance] initTools took ${(performance.now() - startTime).toFixed(
+        0
+      )} ms`
+    );
+  }
+
+  private async loadThread() {
+    const startTime = performance.now();
+    console.log("Loading thread...");
+    const result = await getThreadByID({ threadID: this.threadID });
+    this.thread = result;
+    console.log(
+      `[Performance] loadThread took ${(performance.now() - startTime).toFixed(
         0
       )} ms`
     );
