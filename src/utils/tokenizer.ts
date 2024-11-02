@@ -2,19 +2,14 @@ import { Tiktoken, TiktokenBPE } from "js-tiktoken/lite";
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "./message";
 
-let ranksCache: TiktokenBPE | null = null;
+let tiktoken: Tiktoken | null = null;
 
-const loadRanks = async (): Promise<TiktokenBPE> => {
-  if (!ranksCache) {
+const initializeTokenizer = async (): Promise<Tiktoken> => {
+  if (!tiktoken) {
     const { default: ranks } = await import("./tokenizer-ranks");
-    ranksCache = ranks;
+    tiktoken = new Tiktoken(ranks);
   }
-  return ranksCache;
-};
-
-const initializeTokenizer = async () => {
-  const ranks = await loadRanks();
-  return new Tiktoken(ranks);
+  return tiktoken;
 };
 
 export const countTokens = async (text: string): Promise<number> => {
