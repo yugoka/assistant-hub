@@ -50,8 +50,6 @@ export const trimMessageHistory = async (
   let totalTokens = 0;
   const trimmedMessages = [];
 
-  const tokenizer = await initializeTokenizer();
-
   // 最新のメッセージから順に処理
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
@@ -71,5 +69,11 @@ export const trimMessageHistory = async (
   if (!trimmedMessages.length) {
     return [messages[messages.length - 1]];
   }
+
+  // 最初のメッセージがtoolロールの場合は削除
+  if (trimmedMessages.length > 1 && trimmedMessages[0].role === "tool") {
+    trimmedMessages.shift();
+  }
+
   return trimmedMessages;
 };
