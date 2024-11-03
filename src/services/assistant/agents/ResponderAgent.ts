@@ -14,7 +14,7 @@ import {
 } from "../../schema/openapiToTools";
 import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
-import { trimMessageHistory } from "@/utils/tokenizer";
+import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
 
 const MAX_STEPS = 5;

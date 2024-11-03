@@ -1,6 +1,6 @@
 import { Tiktoken, TiktokenBPE } from "js-tiktoken/lite";
 import { Message } from "@/types/Message";
-import { parseMessageContent } from "./message";
+import { parseMessageContent } from "../../utils/message";
 
 let tiktoken: Tiktoken | null = null;
 

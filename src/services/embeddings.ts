@@ -1,5 +1,5 @@
 import { Message } from "@/types/Message";
-import { trimTextByMaxTokens } from "./../utils/tokenizer";
+import { trimTextByMaxTokens } from "./tokenizer/tokenizer";
 import OpenAI from "openai";
 import { EmbeddingCreateParams } from "openai/resources";
 import { stringfyMessagesForLM } from "@/utils/message";
