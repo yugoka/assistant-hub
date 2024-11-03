@@ -1,6 +1,9 @@
+import React, { useState } from "react";
+import { ClipboardCheck, Clipboard } from "lucide-react";
 import { Components } from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import atomonedark from "react-syntax-highlighter/dist/cjs/styles/prism/a11y-dark";
+import syntaxHighlighterStyle from "react-syntax-highlighter/dist/cjs/styles/prism/material-dark";
+import { Button } from "../ui/button";
 
 export const MarkdownComponents: Components = {
   // Headers
@@ -23,18 +26,45 @@ export const MarkdownComponents: Components = {
     <ol className="my-2 ml-4 list-decimal space-y-1">{children}</ol>
   ),
 
-  // Code blocks
-  code: ({ node, ref, className, children, style, ...props }) => {
+  // Code blocks with language display and copy button
+  code: ({ node, ref, className, children, ...props }) => {
     const match = /language-(\w+)/.exec(className || "");
+    const language = match ? match[1] : "plaintext";
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(String(children).replace(/\n$/, ""));
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 1000);
+    };
     return (
-      <SyntaxHighlighter
-        {...props}
-        style={atomonedark}
-        language={match ? match[1] : "language-plaintext"}
-        PreTag="div"
-        className="my-3 overflow-x-auto rounded-lg w-full"
-        children={String(children).replace(/\n$/, "")}
-      />
+      <div className="my-3 relative rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+        <div className="flex justify-between items-center px-2  bg-gray-200 dark:bg-gray-900 text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-xs">{language}</span>
+          <Button
+            variant="ghost"
+            onClick={handleCopy}
+            className="p-1 text-xs h-8"
+          >
+            {isCopied ? (
+              <ClipboardCheck className="w-4 h-4" />
+            ) : (
+              <Clipboard className="w-4 h-4" />
+            )}
+            {isCopied ? "Copied!" : "Copy"}
+          </Button>
+        </div>
+        <SyntaxHighlighter
+          {...props}
+          style={syntaxHighlighterStyle}
+          language={language}
+          PreTag="div"
+          className="overflow-x-auto rounded-b-lg p-0"
+          customStyle={{ margin: 0 }}
+        >
+          {String(children).replace(/\n$/, "")}
+        </SyntaxHighlighter>
+      </div>
     );
   },
 
