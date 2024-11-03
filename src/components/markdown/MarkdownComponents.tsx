@@ -1,4 +1,6 @@
 import { Components } from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import atomonedark from "react-syntax-highlighter/dist/cjs/styles/prism/a11y-dark";
 
 export const MarkdownComponents: Components = {
   // Headers
@@ -22,15 +24,17 @@ export const MarkdownComponents: Components = {
   ),
 
   // Code blocks
-  code: ({ className, children }) => {
+  code: ({ node, ref, className, children, style, ...props }) => {
+    const match = /language-(\w+)/.exec(className || "");
     return (
-      <div className="my-3 overflow-x-auto">
-        <code
-          className={`${className} w-full max-w-full inline-block rounded-lg p-4 bg-gray-800 dark:bg-gray-900 text-gray-100 font-mono text-sm whitespace-pre-wrap`}
-        >
-          {children}
-        </code>
-      </div>
+      <SyntaxHighlighter
+        {...props}
+        style={atomonedark}
+        language={match ? match[1] : "language-plaintext"}
+        PreTag="div"
+        className="my-3 overflow-x-auto rounded-lg w-full"
+        children={String(children).replace(/\n$/, "")}
+      />
     );
   },
 

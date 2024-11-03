@@ -2,9 +2,9 @@ export const chatBubbleStyles = {
   container: (isUser: boolean) =>
     `flex ${
       isUser ? "justify-end" : "justify-start"
-    } animate-fade-in-fast py-0`,
+    } animate-fade-in-fast py-0.5`,
 
-  messageWrapper: "max-w-[85%] space-y-1",
+  messageWrapper: "max-w-[85%] space-y-0",
 
   username: (isUser: boolean) =>
     `text-xs text-gray-500 dark:text-gray-400 ${
