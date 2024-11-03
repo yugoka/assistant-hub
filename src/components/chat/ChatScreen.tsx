@@ -24,6 +24,7 @@ export default function ChatScreen({ threadID }: Props) {
     handleSubmit,
     isLoading,
     isError,
+    isStreaming,
   } = useChat({
     api: "/api/chat/",
     threadID,
@@ -135,7 +136,9 @@ export default function ChatScreen({ threadID }: Props) {
             value={input}
             onChange={handleInputChange}
           />
-          <Button type="submit">Send</Button>
+          <Button type="submit" disabled={isLoading || isStreaming}>
+            Send
+          </Button>
         </form>
       </div>
     </div>
