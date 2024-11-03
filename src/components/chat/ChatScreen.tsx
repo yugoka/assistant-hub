@@ -24,6 +24,7 @@ export default function ChatScreen({ threadID }: Props) {
     handleSubmit,
     isLoading,
     isError,
+    isStreaming,
   } = useChat({
     api: "/api/chat/",
     threadID,
@@ -108,14 +109,17 @@ export default function ChatScreen({ threadID }: Props) {
 
   return (
     <div className="flex h-full flex-col w-full">
-      <div className="flex-1 overflow-auto p-4" ref={scrollContainer}>
+      <div
+        className="flex-1 overflow-y-auto py-4 px-4 md:px-6"
+        ref={scrollContainer}
+      >
         {isLoading ? (
           <Loader />
         ) : isError ? (
           <ErrorLarge />
         ) : (
           <>
-            <div className="grid gap-4 max-w-2xl mx-auto">
+            <div className="max-w-3xl mx-auto">
               <ChatLogs messages={messages} />
             </div>
             <div ref={endOfMessages} className="h-1" />
@@ -135,7 +139,9 @@ export default function ChatScreen({ threadID }: Props) {
             value={input}
             onChange={handleInputChange}
           />
-          <Button type="submit">Send</Button>
+          <Button type="submit" disabled={isLoading || isStreaming}>
+            Send
+          </Button>
         </form>
       </div>
     </div>

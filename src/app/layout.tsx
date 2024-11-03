@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={cn("bg-background font-sans antialiased", fontSans.variable)}
       >
-        <main className="h-screen flex flex-col items-center">{children}</main>
+        <main className="h-dvh flex flex-col items-center">{children}</main>
       </body>
     </html>
   );

@@ -1,7 +1,11 @@
+// src/components/chat/ChatLogBubble.tsx
+
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "@/utils/message";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { MarkdownComponents } from "../markdown/MarkdownComponents";
+import { chatBubbleStyles } from "./chatBubbleStyles";
 
 type Props = {
   message: Message;
@@ -9,39 +13,36 @@ type Props = {
 };
 
 export default function ChatLogBubble({ message, username }: Props) {
-  return (
-    <>
-      <div
-        className={`flex ${
-          message.role === "user" && "justify-end"
-        } animate-fade-in-fast`}
-      >
-        <div className="max-w-[80%] space-y-0.">
-          <div
-            className={`${
-              message.role === "user" && "text-right"
-            } text-xs text-gray-500 dark:text-gray-400`}
-          >
-            {username || message.role}
-          </div>
-          <div className="rounded-lg bg-gray-100 px-4 py-2 text-sm dark:bg-gray-800">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {parseMessageContent(message.content)}
-            </ReactMarkdown>
-          </div>
+  const isUser = message.role === "user";
+  const styles = chatBubbleStyles;
 
-          <div className="text-right text-xs text-gray-500 dark:text-gray-400 min-h-4">
-            {message?.created_at ? (
-              <span className="animate-fade-in-fast">
-                {formatDate(message.created_at)}
-              </span>
-            ) : (
-              ""
-            )}
-          </div>
+  return (
+    <div className={styles.container(isUser)}>
+      <div className={styles.messageWrapper}>
+        <div className={styles.username(isUser)}>
+          {username || message.role}
+        </div>
+
+        <div className={styles.bubble(isUser)}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={MarkdownComponents}
+          >
+            {parseMessageContent(message.content)}
+          </ReactMarkdown>
+        </div>
+
+        <div className={styles.timestamp(isUser)}>
+          {message?.created_at ? (
+            <span className="animate-fade-in-fast">
+              {formatDate(message.created_at)}
+            </span>
+          ) : (
+            ""
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

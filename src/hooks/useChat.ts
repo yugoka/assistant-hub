@@ -17,6 +17,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
   const router = useRouter();
@@ -66,8 +67,10 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsError(false);
+    if (isLoading || isStreaming) return;
     if (!input.trim() || !user) return;
 
+    setIsStreaming(true);
     try {
       const targetThreadID = await ensureThreadID(input, user.id);
       const userMessage = createUserMessage(input, targetThreadID);
@@ -80,6 +83,8 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       setIsError(true);
+    } finally {
+      setIsStreaming(false);
     }
   };
 
@@ -159,6 +164,7 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
     isLoading,
     isError,
     refetch,
+    isStreaming,
   };
 };
 
