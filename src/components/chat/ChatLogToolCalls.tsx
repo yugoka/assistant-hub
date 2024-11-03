@@ -64,7 +64,7 @@ export default function ChatLogToolCalls({
                       {message.tool_calls.map((toolCall) => (
                         <p
                           key={toolCall.id}
-                          className="flex my-1"
+                          className="flex my-1 max-w-full"
                         >{`${toolCall.function.arguments}`}</p>
                       ))}
                     </div>
