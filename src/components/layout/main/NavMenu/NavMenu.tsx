@@ -31,7 +31,11 @@ const navMenuToolsMode = {
 
 export const navMenuModes: NavMenuMode[] = [navMenuChatMode, navMenuToolsMode];
 
-export default function NavMenu() {
+type Props = {
+  onMobileMenuClose?: () => void;
+};
+
+export default function NavMenu({ onMobileMenuClose }: Props) {
   const pathName = usePathname();
 
   const { setIsSettingsMenuOpen } = useSettings();
@@ -71,7 +75,14 @@ export default function NavMenu() {
         </div>
       </div>
 
-      <div className="flex flex-col flex-grow flex-shrink h-56">
+      {/* 
+      ここから下のエリアはタップ時にメニューを閉じる(モバイル版)
+      今後チューニングが必要であればバケツリレーするかproviderで対応
+      */}
+      <div
+        className="flex flex-col flex-grow flex-shrink h-56"
+        onClick={onMobileMenuClose}
+      >
         {currentNavMenuMode === navMenuChatMode ? (
           <ChatNavigation />
         ) : currentNavMenuMode === navMenuToolsMode ? (

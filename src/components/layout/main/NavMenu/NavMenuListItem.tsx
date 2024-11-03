@@ -21,6 +21,8 @@ export default function NavMenuListItem({
     useState<boolean>(false);
 
   const handleClickDeleteButton = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDeleteButtonClicked(true);
     if (onClickDeleteButton) {
       onClickDeleteButton(e);
