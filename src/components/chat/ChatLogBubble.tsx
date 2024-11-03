@@ -16,7 +16,7 @@ export default function ChatLogBubble({ message, username }: Props) {
           message.role === "user" && "justify-end"
         } animate-fade-in-fast`}
       >
-        <div className="max-w-[80%] space-y-0.">
+        <div className="max-w-[100%] p-1 space-y-0">
           <div
             className={`${
               message.role === "user" && "text-right"
@@ -30,7 +30,11 @@ export default function ChatLogBubble({ message, username }: Props) {
             </ReactMarkdown>
           </div>
 
-          <div className="text-right text-xs text-gray-500 dark:text-gray-400 min-h-4">
+          <div
+            className={`${
+              message.role === "user" ? "text-right" : "text-left"
+            } text-xs text-gray-500 dark:text-gray-400 min-h-4`}
+          >
             {message?.created_at ? (
               <span className="animate-fade-in-fast">
                 {formatDate(message.created_at)}
