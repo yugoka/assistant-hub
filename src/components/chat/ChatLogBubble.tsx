@@ -1,5 +1,3 @@
-// src/components/chat/ChatLogBubble.tsx
-
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "@/utils/message";
 import ReactMarkdown from "react-markdown";
