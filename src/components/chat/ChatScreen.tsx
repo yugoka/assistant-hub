@@ -1,13 +1,13 @@
-"use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChat } from "@/hooks/useChat";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChatLogs from "./ChatLogs";
 import Loader from "../common/Loader";
 import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
+import NewChatMessage from "./NewChatMessage";
 
 type Props = {
   threadID: string | null | undefined;
@@ -30,27 +30,28 @@ export default function ChatScreen({ threadID }: Props) {
     threadID,
   });
 
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const scrollContainer = useRef<HTMLDivElement>(null);
+
   const handleNewMessage = (newMessage: Message) => {
     setMessages((messages) => {
-      const newMessageIndex = messages.findLastIndex(
+      const newMessageIndex = messages.findIndex(
         (message) => message.id === newMessage.id
       );
       const newMessagesList = [...messages];
 
       if (newMessageIndex === -1) {
         newMessagesList.push(newMessage);
-        return newMessagesList;
       } else {
         newMessagesList[newMessageIndex] = newMessage;
-        return newMessagesList;
       }
+      return newMessagesList;
     });
   };
 
   const subscribeMessageChanges = () => {
-    // 変更を購読する
     supabase
-      .channel("chat-messages")
+      .channel(`chat-messages-${threadID || "new"}`)
       .on(
         "postgres_changes",
         {
@@ -69,41 +70,36 @@ export default function ChatScreen({ threadID }: Props) {
   useEffect(() => {
     subscribeMessageChanges();
     return () => {
-      supabase.channel("chat-messages").unsubscribe();
+      supabase.channel(`chat-messages-${threadID || "new"}`).unsubscribe();
     };
   }, [threadID]);
 
-  const endOfMessages = useRef<HTMLDivElement>(null);
-  const scrollContainer = useRef(null);
-
-  // 自動スクロール
   useEffect(() => {
-    followBottom(100);
+    if (isAtBottom || scrollContainer.current?.scrollTop === 0) {
+      scrollToBottom();
+    }
   }, [messages]);
 
-  // 読み込み時に一度だけ最下部にスクロール
   useEffect(() => {
     if (!isLoading) {
-      scrollToBottom();
+      scrollToBottom(true);
     }
   }, [isLoading]);
 
-  const scrollToBottom = () => {
-    if (endOfMessages.current) {
-      endOfMessages.current.scrollIntoView({ behavior: "auto" });
+  const scrollToBottom = (instant = false) => {
+    if (scrollContainer.current) {
+      scrollContainer.current.scrollTo({
+        top: scrollContainer.current.scrollHeight,
+        behavior: instant ? "instant" : "smooth",
+      });
     }
   };
 
-  const followBottom = (offset: number) => {
-    if (scrollContainer.current && endOfMessages.current) {
+  const handleScroll = () => {
+    if (scrollContainer.current) {
       const { scrollTop, clientHeight, scrollHeight } = scrollContainer.current;
-
-      // ここの高さはハードコーディングなので注意
-      const isAtBottom = scrollTop + clientHeight >= scrollHeight - offset;
-
-      if (isAtBottom) {
-        scrollToBottom();
-      }
+      const isUserAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+      setIsAtBottom(isUserAtBottom);
     }
   };
 
@@ -112,20 +108,30 @@ export default function ChatScreen({ threadID }: Props) {
       <div
         className="flex-1 overflow-y-auto py-4 px-4 md:px-6"
         ref={scrollContainer}
+        onScroll={handleScroll}
       >
         {isLoading ? (
           <Loader />
         ) : isError ? (
           <ErrorLarge />
+        ) : messages.length ? (
+          <div className="max-w-3xl mx-auto">
+            <ChatLogs messages={messages} />
+          </div>
         ) : (
-          <>
-            <div className="max-w-3xl mx-auto">
-              <ChatLogs messages={messages} />
-            </div>
-            <div ref={endOfMessages} className="h-1" />
-          </>
+          <NewChatMessage />
         )}
       </div>
+
+      {/* スクロールが最下部でない場合に表示されるボタン */}
+      <Button
+        variant="outline"
+        className={`opacity-100 disabled:opacity-0 w-10 h-10 fixed bottom-24 right-4 rounded-full transition-opacity duration-300 delay-100 `}
+        onClick={() => scrollToBottom()}
+        disabled={isAtBottom}
+      >
+        ↓
+      </Button>
 
       <div className="border-t bg-gray-100 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
         <form

@@ -29,7 +29,16 @@ export const MarkdownComponents: Components = {
   // Code blocks with language display and copy button
   code: ({ node, ref, className, children, ...props }) => {
     const match = /language-(\w+)/.exec(className || "");
-    const language = match ? match[1] : "plaintext";
+    // inline code
+    if (!match) {
+      return (
+        <code className="px-1.5 py-0.5 mx-0.5 rounded-sm bg-gray-200 dark:bg-gray-700 font-mono text-sm">
+          {children}
+        </code>
+      );
+    }
+
+    const language = match[1];
     const [isCopied, setIsCopied] = useState(false);
 
     const handleCopy = () => {
