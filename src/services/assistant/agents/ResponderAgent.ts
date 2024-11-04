@@ -14,7 +14,7 @@ import {
 } from "../../schema/openapiToTools";
 import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
-import { trimMessageHistory } from "@/utils/tokenizer";
+import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
 
 const MAX_STEPS = 5;
@@ -370,6 +370,7 @@ export default class ResponderAgent {
       }
     } catch (error) {
       console.error("Failed to save message:", error);
+      console.error("message:", newMessages);
     }
   }
 
