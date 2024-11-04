@@ -7,6 +7,7 @@ import Loader from "../common/Loader";
 import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
+import NewChatMessage from "./NewChatMessage";
 
 type Props = {
   threadID: string | null | undefined;
@@ -113,10 +114,12 @@ export default function ChatScreen({ threadID }: Props) {
           <Loader />
         ) : isError ? (
           <ErrorLarge />
-        ) : (
+        ) : messages.length ? (
           <div className="max-w-3xl mx-auto">
             <ChatLogs messages={messages} />
           </div>
+        ) : (
+          <NewChatMessage />
         )}
       </div>
 
