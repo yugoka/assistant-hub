@@ -1,6 +1,6 @@
 import { Message } from "@/types/Message";
 import { parseMessageContent } from "../../utils/message";
-import { Tiktoken, TiktokenBPE } from "js-tiktoken/lite";
+import { Tiktoken } from "js-tiktoken/lite";
 
 // トークナイザーの初期化
 let tiktoken: Tiktoken | null = null;
@@ -24,7 +24,6 @@ export const trimTextByMaxTokens = async (
   maxTokens: number
 ): Promise<string> => {
   if (maxTokens === -1) return text;
-
   const tokenizer = await initializeTokenizer();
   const encoded = tokenizer.encode(text);
 
@@ -79,6 +78,7 @@ const groupMessagesByToolCall = (messages: Message[]): MessageGroup[] => {
   }
 
   groups.push(currentGroup);
+
   return groups;
 };
 
@@ -90,8 +90,8 @@ export const trimMessageHistory = async (
   if (maxTokens === -1) return messages;
 
   // メッセージをグループ化
-  const groups = await groupMessagesByToolCall(messages);
-  const trimmedMessages: Message[] = [];
+  const groups = groupMessagesByToolCall(messages);
+  const includedGroups: MessageGroup[] = [];
 
   // 後ろから順にグループを追加していく
   let totalTokens = 0;
@@ -106,7 +106,13 @@ export const trimMessageHistory = async (
       if (totalTokens > maxTokens) break;
     }
     if (totalTokens > maxTokens) break;
+    includedGroups.push(group);
+  }
 
+  // グループを逆順で見ているので反転する
+  includedGroups.reverse();
+  const trimmedMessages: Message[] = [];
+  for (const group of includedGroups) {
     trimmedMessages.push(...group.messages);
   }
 

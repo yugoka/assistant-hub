@@ -370,6 +370,7 @@ export default class ResponderAgent {
       }
     } catch (error) {
       console.error("Failed to save message:", error);
+      console.error("message:", newMessages);
     }
   }
 
