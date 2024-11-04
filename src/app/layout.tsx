@@ -4,6 +4,7 @@ import { Inter as FontSans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
+import { ThemeProvider } from "@/contexts/ThemeProvider";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -27,7 +28,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={cn("bg-background font-sans antialiased", fontSans.variable)}
       >
-        <main className="h-dvh flex flex-col items-center">{children}</main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className="h-dvh flex flex-col items-center">{children}</main>
+        </ThemeProvider>
       </body>
     </html>
   );
