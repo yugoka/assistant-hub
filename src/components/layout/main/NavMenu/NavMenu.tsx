@@ -58,7 +58,6 @@ export default function NavMenu({ onMobileMenuClose }: Props) {
       <div className="flex flex-col px-4 pb-2 border-b dark:border-gray-800">
         <div className="flex justify-center">
           <Link className="mb-2 flex items-center" href="/">
-            <BrandIcon className="h-6 w-6 mr-2" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
               Assistant Hub
             </span>
