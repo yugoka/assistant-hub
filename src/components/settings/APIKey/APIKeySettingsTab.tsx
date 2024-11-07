@@ -7,7 +7,7 @@ import { useQuery } from "react-query";
 import APIKeyTable from "./APIKeyTable";
 import { apikeyEditorFormSchema, newApikeyDefaultValues } from "./ApiKeyEditor";
 import { useState } from "react";
-import { UseFormReturn, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ApikeyEditor from "./ApiKeyEditor";
