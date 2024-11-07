@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
 import NewChatMessage from "./NewChatMessage";
+import { useThread } from "./thread/ThreadProvider";
 
 type Props = {
   threadID: string | null | undefined;
