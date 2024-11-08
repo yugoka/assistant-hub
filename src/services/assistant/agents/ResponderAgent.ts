@@ -437,17 +437,25 @@ export default class ResponderAgent {
 
   private async saveMemory(newMessages: Message[]) {
     if (this.thread && this.thread.enable_memory) {
-      const newUserMessages = newMessages.filter((msg) => msg.role === "user");
+      const prunedNewMessages: Message[] = newMessages.map((msg) => {
+        if (msg.role === "user") return msg;
+        // ユーザーメッセージ以外は雑に最初の100文字をいれる
+        else
+          return { ...msg, content: msg.content?.slice(0, 100) + "..." || "" };
+      });
       const newMemory = await generateMemory({
         currentMemory: this.thread.memory || "",
-        userInputString: stringfyMessagesForLM(newUserMessages),
+        userInputString: stringfyMessagesForLM(prunedNewMessages),
         maxTokens: this.thread.maximum_memory_tokens,
-        model: this.thread.model_name,
+        // コスト削減のために一旦固定にする
+        model: "gpt-4o-mini",
       });
 
       if (newMemory !== this.thread.memory) {
         await updateThread({ id: this.thread.id, memory: newMemory });
         console.log("[Memory Saved] Length: ", newMemory.length);
+      } else {
+        console.log("[MemoryManager] No Update");
       }
     } else {
       throw new Error("Thread not initialized");

@@ -1,66 +1,41 @@
 export const getMemoryPrompt = (memory: string): string => {
-  return `The following is the long-term memory. It includes things that the user has asked you to remember and information from past conversations that you have determined would be beneficial to remember.
-[Memory]
+  return `The following is your long-term memory. It includes things that the user has asked you to remember and information from past conversations that you have determined would be beneficial to remember. After a conversation with a user, memories are dynamically added or removed.
+[Assistant's Memory]
 ${memory}
 `;
 };
 
 export type MemoryGenerationResponseFormat = {
   need_update: boolean;
-  new_memory?: string;
+  updated_memory?: string;
 };
 
 export const getMemoryGenerationPrompt = (
   currentMemory: string,
-  context: string
+  context: string,
+  maxMemoryTokens: number,
+  currentTokenCount: number
 ): { systemPrompt: string; userPrompt: string } => {
   return {
-    systemPrompt: `[Summary] As an agent, you create long-term memory from user messages. I'll send user conversations; update ChatGPT's memory accordingly.
+    systemPrompt: `You are a ChatGPT agent managing long-term memory based on user messages. Update your memory by adding or deleting information whenever you think it will support future interactions, prioritizing important data and any information the User requests to remember. Delete less important information as needed to manage memory constraints.
 
-[Flow]
-I'll provide current memory and a new user message.
-Decide if memory needs updating. If so, send the full updated memory (add or remove info as needed).
+Clearly specify who each piece of information is about by referring to the User as "User" and yourself as "I".
 
-[Important Rules]
-- First, determine if an update is needed. Only output new_memory if necessary.
-- Record only information important for user support or explicitly requested by the user.
-- Use bullet points for memory entries.
-- Add explicitly requested info to [Important]; others to [Normal].
+Track information with priority and recency to decide what to keep or remove.
 
-[Additional Rules]
-- Add new info at the end.
-- If space is limited, remove older or less important info.
-- When updating, send the full updated memory.
-- If no update is needed, don't send new memory.
-- Adjust the memory language to match the user’s language. If the user speaks Japanese, output the memory in Japanese.
+You can use up to ${maxMemoryTokens} tokens. Current memory tokens: ${currentTokenCount} / ${maxMemoryTokens}.
 
-[Output Format]
-In the following JSON format:
-type format = {
-  need_update: boolean; // true if memory update is needed
-  new_memory?: string | null; // only when need_update=true; output full memory text.
-}
-
-[Example Output]
-If current memory is "The user's name is Yugo," and the user says, "I'm going to India next week. Also, remember that I prefer concise speech":
+Always output in this JSON format:
 {
-  "need_update": true,
-  "new_memory": \`
-[Important]
-- The user's name is Yugo
-- Yugo prefers concise speech
-
-[Normal]
-- Yugo is going to India next week
-\`
+  "need_update": boolean, // true if memory update is needed
+  "updated_memory": string | null // include full memory text when need_update is true
 }
-
-Let's Start!`,
+Ensure updated_memory always contains the full memory text when updating. Keep your responses concise to minimize token usage.`,
     userPrompt: `[Current Memory]
 ${currentMemory}
 
 [User Input]
-${context ? context : "[Important]\n\n[Normal]"}
+${context}
 `,
   };
 };

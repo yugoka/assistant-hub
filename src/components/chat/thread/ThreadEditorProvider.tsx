@@ -22,12 +22,18 @@ export default function ThreadEditorProviderWrapper({
   const [currentThread, setCurrentThread] = useState<Thread | null>(null);
   const { refetch } = useThread();
 
-  const openThreadEditor = (thread?: Thread) => {
+  const openThreadEditor = async (thread?: Thread) => {
     if (!thread) {
       return;
     }
     setIsThreadEditorMenuOpen(true);
     setCurrentThread(thread);
+
+    // モーダル表示後、すぐにメモリを更新する
+    const liveThreadRes = await fetch(`/api/threads/${thread.id}`);
+    const liveThread: Thread = await liveThreadRes.json();
+    setIsThreadEditorMenuOpen(true);
+    setCurrentThread({ ...thread, memory: liveThread.memory });
   };
 
   return (
