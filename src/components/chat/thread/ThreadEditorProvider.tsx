@@ -1,7 +1,7 @@
 "use client";
 import ThreadEditorDialog from "@/components/chat/thread/ThreadEditorDialog";
 import { Thread } from "@/types/Thread";
-import { createContext, useContext, ReactNode, useState } from "react";
+import { createContext, useContext, ReactNode, useState, useMemo } from "react";
 import { useThread } from "./ThreadProvider";
 
 interface ThreadEditorContextType {

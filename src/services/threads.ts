@@ -109,7 +109,7 @@ export interface UpdateThreadInput {
   maximum_memory_tokens?: number;
   memory?: string;
   system_prompt?: string;
-  protected?: boolean;
+  starred?: boolean;
   maximum_initial_input_tokens?: number;
   model_name?: string;
 }

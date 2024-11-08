@@ -77,7 +77,7 @@ export async function PUT(
       maximum_memory_tokens: reqBody.maximum_memory_tokens,
       enable_memory: reqBody.enable_memory,
       system_prompt: reqBody.system_prompt,
-      protected: reqBody.protected,
+      starred: reqBody.starred,
       maximum_initial_input_tokens: reqBody.maximum_initial_input_tokens,
       model_name: reqBody.model_name,
     };

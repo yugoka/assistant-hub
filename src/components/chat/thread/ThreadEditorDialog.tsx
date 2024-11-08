@@ -34,8 +34,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "@/components/ui/label";
 import { RefetchOptions } from "react-query";
 import { Loader2Icon } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-// Define model options as a constant array
 const MODEL_OPTIONS = ["gpt-4o", "gpt-4o-mini"];
 
 const threadSettingsFormSchema = z
@@ -48,7 +48,7 @@ const threadSettingsFormSchema = z
     memory: z.string(),
     maximum_memory_tokens: z.number().min(0, "Must be a positive number"),
     system_prompt: z.string(),
-    protected: z.boolean(),
+    starred: z.boolean(),
     maximum_input_tokens: z.number().min(0, "Must be a positive number"),
     model_name: z.string(),
     custom_model_name: z.string().optional(),
@@ -85,7 +85,7 @@ export default function ThreadEditorDialog({
       memory: "",
       maximum_memory_tokens: 1024,
       system_prompt: "",
-      protected: false,
+      starred: false,
       maximum_input_tokens: 5120,
       model_name: "gpt-4",
       custom_model_name: "",
@@ -104,21 +104,24 @@ export default function ThreadEditorDialog({
           : "Other",
       });
     }
-  }, [defaultThread]);
+  }, [defaultThread?.id]); // ここを変更
 
   const selectedModelName = useWatch({
     control: form.control,
     name: "model_name",
   });
 
+  const enableMemory = useWatch({
+    control: form.control,
+    name: "enable_memory",
+  });
+
   const onSubmit = async (values: ThreadSettingsFormValues) => {
     setIsSaving(true);
     try {
-      // If "Other" is selected, use the custom model name
       if (values.model_name === "Other") {
         values.model_name = values.custom_model_name || "";
       }
-      // Remove custom_model_name from the values
       const { custom_model_name, ...submitValues } = values;
 
       await fetch(`/api/threads/${submitValues.id}`, {
@@ -128,7 +131,6 @@ export default function ThreadEditorDialog({
         },
         body: JSON.stringify(submitValues),
       });
-      // Proceed with form submission logic here
       setIsOpen(false);
       refetch();
     } catch (error) {
@@ -138,11 +140,30 @@ export default function ThreadEditorDialog({
     }
   };
 
+  const FormSection = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
+    <Card className="mb-2">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">{children}</CardContent>
+    </Card>
+  );
+
+  const FormRow = ({ children }: { children: React.ReactNode }) => (
+    <div className="grid grid-cols-4 gap-4 items-center">{children}</div>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
       <DialogContent
-        className="min-h-full sm:min-h-0 sm:max-w-[800px] overflow-y-auto"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        key={defaultThread?.id} // ここを追加
+        className="max-h-full md:max-h-[90vh] max-w-3xl overflow-hidden flex flex-col"
       >
         <DialogHeader>
           <DialogTitle>Thread Settings</DialogTitle>
@@ -152,239 +173,263 @@ export default function ThreadEditorDialog({
         </DialogHeader>
         <Form {...form}>
           <form
-            className="grid gap-4 py-4"
             onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6 flex-1 overflow-y-auto pr-6"
           >
-            {/* Name */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel htmlFor="name" className="text-right mt-1">
-                    Name
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input id="name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Protected */}
-            <FormField
-              control={form.control}
-              name="protected"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel htmlFor="protected" className="text-right mt-1">
-                    Protected
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="protected"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                      <Label htmlFor="protected" className="ml-2">
-                        Restrict access to this thread
-                      </Label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* System Prompt */}
-            <FormField
-              control={form.control}
-              name="system_prompt"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel
-                    htmlFor="system_prompt"
-                    className="text-right mt-1"
-                  >
-                    Prompt
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Textarea id="system_prompt" rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Enable Memory */}
-            <FormField
-              control={form.control}
-              name="enable_memory"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel
-                    htmlFor="enable_memory"
-                    className="text-right mt-1"
-                  >
-                    Enable Memory
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <div className="flex items-center">
-                      <Checkbox
-                        id="enable_memory"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                      <Label htmlFor="enable_memory" className="ml-2">
-                        Store conversation history
-                      </Label>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Memory */}
-            <FormField
-              control={form.control}
-              name="memory"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel htmlFor="memory" className="text-right mt-1">
-                    Memory
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Textarea id="memory" rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Maximum Memory Tokens */}
-            <FormField
-              control={form.control}
-              name="maximum_memory_tokens"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel
-                    htmlFor="maximum_memory_tokens"
-                    className="text-right mt-1"
-                  >
-                    Max Memory Tokens
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input
-                      id="maximum_memory_tokens"
-                      type="number"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Maximum Input Tokens */}
-            <FormField
-              control={form.control}
-              name="maximum_input_tokens"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel
-                    htmlFor="maximum_input_tokens"
-                    className="text-right mt-1"
-                  >
-                    Max Input Tokens
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Input id="maximum_input_tokens" type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Model */}
-            <FormField
-              control={form.control}
-              name="model_name"
-              render={({ field }) => (
-                <FormItem className="grid items-center grid-cols-4 gap-4">
-                  <FormLabel htmlFor="model_name" className="text-right mt-1">
-                    Model
-                  </FormLabel>
-                  <FormControl className="col-span-3">
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Reset custom_model_name when a predefined model is selected
-                        if (value !== "Other") {
-                          form.setValue("custom_model_name", "");
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MODEL_OPTIONS.map((model) => (
-                          <SelectItem key={model} value={model}>
-                            {model}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Custom Model Name */}
-            {selectedModelName === "Other" && (
+            <FormSection title="Basic Settings">
               <FormField
                 control={form.control}
-                name="custom_model_name"
+                name="name"
                 render={({ field }) => (
-                  <FormItem className="grid items-center grid-cols-4 gap-4">
-                    <FormLabel
-                      htmlFor="custom_model_name"
-                      className="text-right"
-                    >
-                      Custom Model Name
+                  <FormRow>
+                    <FormLabel htmlFor="name" className="text-right">
+                      Name
                     </FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input id="custom_model_name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <Input id="name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
                 )}
               />
-            )}
 
-            {/* Form Footer */}
-            <DialogFooter>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <Loader2Icon className="animate-spin mr-2 w-5 h-5" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
+              <FormField
+                control={form.control}
+                name="starred"
+                render={({ field }) => (
+                  <FormRow>
+                    <FormLabel htmlFor="starred" className="text-right">
+                      ☆ Favorite
+                    </FormLabel>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <div className="flex items-center">
+                          <Checkbox
+                            id="starred"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <Label htmlFor="starred" className="ml-2">
+                            Mark this thread as favorite to make it undeletable
+                          </Label>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
                 )}
-              </Button>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-            </DialogFooter>
+              />
+
+              <FormField
+                control={form.control}
+                name="system_prompt"
+                render={({ field }) => (
+                  <FormRow>
+                    <FormLabel htmlFor="system_prompt" className="text-right">
+                      Prompt
+                    </FormLabel>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <Textarea id="system_prompt" rows={3} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
+                )}
+              />
+            </FormSection>
+
+            <FormSection title="Memory Settings">
+              <FormField
+                control={form.control}
+                name="enable_memory"
+                render={({ field }) => (
+                  <FormRow>
+                    <FormLabel htmlFor="enable_memory" className="text-right">
+                      Enable Memory
+                    </FormLabel>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <div className="flex items-center">
+                          <Checkbox
+                            id="enable_memory"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <Label htmlFor="enable_memory" className="ml-2">
+                            Use long-term memory powered by LLM
+                          </Label>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
+                )}
+              />
+
+              {enableMemory && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="memory"
+                    render={({ field }) => (
+                      <FormRow>
+                        <FormLabel htmlFor="memory" className="text-right">
+                          Memory
+                        </FormLabel>
+                        <div className="col-span-3 space-y-1">
+                          <FormControl>
+                            <Textarea id="memory" rows={3} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormRow>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maximum_memory_tokens"
+                    render={({ field }) => (
+                      <FormRow>
+                        <FormLabel
+                          htmlFor="maximum_memory_tokens"
+                          className="text-right"
+                        >
+                          Max Memory Tokens
+                        </FormLabel>
+                        <div className="col-span-3 space-y-1">
+                          <FormControl>
+                            <Input
+                              id="maximum_memory_tokens"
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.valueAsNumber)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </div>
+                      </FormRow>
+                    )}
+                  />
+                </>
+              )}
+            </FormSection>
+
+            <FormSection title="Model Settings">
+              <FormField
+                control={form.control}
+                name="maximum_input_tokens"
+                render={({ field }) => (
+                  <FormRow>
+                    <FormLabel
+                      htmlFor="maximum_input_tokens"
+                      className="text-right"
+                    >
+                      Max Input Tokens
+                    </FormLabel>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <Input
+                          id="maximum_input_tokens"
+                          type="number"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(e.target.valueAsNumber)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="model_name"
+                render={({ field }) => (
+                  <FormRow>
+                    <FormLabel htmlFor="model_name" className="text-right">
+                      Model
+                    </FormLabel>
+                    <div className="col-span-3 space-y-1">
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            if (value !== "Other") {
+                              form.setValue("custom_model_name", "");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a model" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MODEL_OPTIONS.map((model) => (
+                              <SelectItem key={model} value={model}>
+                                {model}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </div>
+                  </FormRow>
+                )}
+              />
+
+              {selectedModelName === "Other" && (
+                <FormField
+                  control={form.control}
+                  name="custom_model_name"
+                  render={({ field }) => (
+                    <FormRow>
+                      <FormLabel
+                        htmlFor="custom_model_name"
+                        className="text-right"
+                      >
+                        Custom Model Name
+                      </FormLabel>
+                      <div className="col-span-3 space-y-1">
+                        <FormControl>
+                          <Input id="custom_model_name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </div>
+                    </FormRow>
+                  )}
+                />
+              )}
+            </FormSection>
           </form>
+          <DialogFooter className="pt-4">
+            <Button
+              type="submit"
+              disabled={isSaving}
+              onClick={form.handleSubmit(onSubmit)}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2Icon className="animate-spin mr-2 w-5 h-5" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>

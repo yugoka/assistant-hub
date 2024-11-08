@@ -7,7 +7,7 @@ export type Thread = {
   memory: string;
   maximum_memory_tokens: number;
   system_prompt: string;
-  protected: boolean;
+  starred: boolean;
   maximum_input_tokens: number;
   model_name: string;
 };
