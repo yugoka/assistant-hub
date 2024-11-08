@@ -21,7 +21,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined
 );
 
-export default function SettingsProviderWrapper({
+export default function SettingsProvider({
   children,
 }: {
   children: ReactNode;

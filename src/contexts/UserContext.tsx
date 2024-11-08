@@ -9,7 +9,7 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export default function UserProviderWrapper({
+export default function UserProvider({
   user,
   error,
   children,
