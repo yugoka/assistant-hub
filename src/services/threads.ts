@@ -110,7 +110,7 @@ export interface UpdateThreadInput {
   memory?: string;
   system_prompt?: string;
   starred?: boolean;
-  maximum_initial_input_tokens?: number;
+  maximum_input_tokens?: number;
   model_name?: string;
 }
 export const updateThread = async (input: UpdateThreadInput) => {

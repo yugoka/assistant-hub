@@ -1,6 +1,10 @@
 import { ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
-import { ChatCompletionChunk } from "openai/resources";
+import {
+  ChatCompletionChunk,
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+} from "openai/resources";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
@@ -16,6 +20,7 @@ import { Thread } from "@/types/Thread";
 import { getThreadByID } from "@/services/threads";
 import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
+import { getMemoryPrompt } from "@/prompts/memory";
 
 const MAX_STEPS = 5;
 
@@ -143,11 +148,13 @@ export default class ResponderAgent {
       this.inputMessages,
       this.thread?.maximum_input_tokens || 0
     );
+
     console.log(
       `[Performance] initMessages took ${(
         performance.now() - startTime
-      ).toFixed(0)} ms`
+      ).toFixed(0)} ms,`
     );
+    console.log(`Trimmed message length: ${this.currentMessages.length}`);
   }
 
   private async processSteps(
@@ -273,6 +280,10 @@ export default class ResponderAgent {
 
   private async fetch() {
     try {
+      // ツール選定などに影響を与えないために、この段階でシステムプロンプト等を入れる
+      const systemMessages = this.getSystemMessages();
+      const chatMessages = convertToOpenAIMessages(this.currentMessages);
+
       const tools =
         this.steps < this.maxToolCallSteps && this.tools.length
           ? this.tools
@@ -281,7 +292,7 @@ export default class ResponderAgent {
       const response = await this.openai.chat.completions.create({
         model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
         stream: true,
-        messages: convertToOpenAIMessages(this.currentMessages),
+        messages: [...systemMessages, ...chatMessages],
         tools,
       });
       return response.toReadableStream();
@@ -292,6 +303,28 @@ export default class ResponderAgent {
       console.error(this.currentMessages);
       throw new Error(`${e}`);
     }
+  }
+
+  private getSystemMessages(): ChatCompletionMessageParam[] {
+    const result: ChatCompletionMessageParam[] = [];
+
+    // システムプロンプト
+    if (this.thread?.system_prompt) {
+      result.push({
+        role: "system",
+        content: this.thread.system_prompt,
+      });
+    }
+
+    // 長期記憶
+    if (this.thread?.enable_memory && this.thread.memory) {
+      result.push({
+        role: "system",
+        content: getMemoryPrompt(this.thread.memory),
+      });
+    }
+
+    return result;
   }
 
   private getToolByName(name: string): OpenAIToolWithExecutor | undefined {
@@ -341,6 +374,9 @@ export default class ResponderAgent {
     try {
       for await (const message of newMessages) {
         const newMessage = message;
+
+        // システムメッセージは保存しない
+        if (newMessage.role === "system") continue;
 
         // 保存用にツール情報を付加する
         if (newMessage.role === "assistant" && newMessage.tool_calls?.length) {
