@@ -6,7 +6,10 @@ import UserProvider from "@/contexts/UserContext";
 import { ReactNode } from "react";
 import SettingsProvider from "@/contexts/SettingsContext";
 import TooltipProviderWrapper from "@/contexts/TooltipProviderWrapper";
-import { NavigationProvider } from "@/contexts/NavigaitonContext";
+import {
+  NavigationProvider,
+  SharedNavMenu,
+} from "@/contexts/NavigaitonContext";
 export default async function MainLayout({
   children,
 }: {
@@ -31,11 +34,9 @@ export default async function MainLayout({
             <TooltipProviderWrapper>
               <div className="flex flex-col h-dvh w-full">
                 <div className="flex h-dvh md:h-full w-full">
-                  <div className="hidden w-64 shrink-0 border-r bg-gray-100 dark:border-gray-800 dark:bg-gray-900 md:block">
-                    <div className="flex h-full flex-col justify-between pt-6">
-                      <NavMenu />
-                    </div>
-                  </div>
+                  <SharedNavMenu>
+                    <NavMenu />
+                  </SharedNavMenu>
                   <main className="flex-1 overflow-auto">{children}</main>
                 </div>
               </div>
