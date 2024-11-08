@@ -51,20 +51,11 @@ export default function NavMenu({ onMobileMenuClose }: Props) {
     setCurrentNavMenuMode(getCurrentMenuMode());
   }, [pathName]);
 
-  console.log("render");
-
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col px-4 pb-2 border-b dark:border-gray-800">
+    <div className="flex flex-col h-full min-w-0">
+      <div className="flex flex-col px-4 py-3 border-b dark:border-gray-800">
         <div className="flex justify-center">
-          <Link className="mb-2 flex items-center" href="/">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
-              Assistant Hub
-            </span>
-          </Link>
-        </div>
-        <div className="flex justify-center">
-          <div className="grow shrink mr-1">
+          <div className="grow shrink">
             <NavMenuDropDown
               currentNavMenuMode={currentNavMenuMode}
               setCurrentNavMenuMode={setCurrentNavMenuMode}
