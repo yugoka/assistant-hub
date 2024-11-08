@@ -18,7 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Dispatch, useEffect, useState } from "react";
+import { Dispatch, useEffect } from "react";
 import { Thread } from "@/types/Thread";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -73,38 +73,14 @@ export default function ThreadEditorDialog({
   defaultThread,
   refetch,
 }: Props) {
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const form = useForm<ThreadSettingsFormValues>({
     resolver: zodResolver(threadSettingsFormSchema),
-    defaultValues: defaultThread || {
-      id: "",
-      name: "",
-      user_id: "",
-      created_at: "",
-      enable_memory: false,
-      memory: "",
-      maximum_memory_tokens: 1024,
-      system_prompt: "",
-      starred: false,
-      maximum_input_tokens: 5120,
-      model_name: "gpt-4",
-      custom_model_name: "",
-    },
+    defaultValues: getDefaultValues(defaultThread),
   });
 
   useEffect(() => {
-    if (defaultThread) {
-      form.reset({
-        ...defaultThread,
-        custom_model_name: MODEL_OPTIONS.includes(defaultThread.model_name)
-          ? ""
-          : defaultThread.model_name,
-        model_name: MODEL_OPTIONS.includes(defaultThread.model_name)
-          ? defaultThread.model_name
-          : "Other",
-      });
-    }
-  }, [defaultThread?.id]); // ここを変更
+    form.reset(getDefaultValues(defaultThread));
+  }, [defaultThread?.id]);
 
   const selectedModelName = useWatch({
     control: form.control,
@@ -117,7 +93,6 @@ export default function ThreadEditorDialog({
   });
 
   const onSubmit = async (values: ThreadSettingsFormValues) => {
-    setIsSaving(true);
     try {
       if (values.model_name === "Other") {
         values.model_name = values.custom_model_name || "";
@@ -135,10 +110,37 @@ export default function ThreadEditorDialog({
       refetch();
     } catch (error) {
       console.error(error);
-    } finally {
-      setIsSaving(false);
     }
   };
+
+  function getDefaultValues(thread: Thread | null): ThreadSettingsFormValues {
+    if (thread) {
+      return {
+        ...thread,
+        custom_model_name: MODEL_OPTIONS.includes(thread.model_name)
+          ? ""
+          : thread.model_name,
+        model_name: MODEL_OPTIONS.includes(thread.model_name)
+          ? thread.model_name
+          : "Other",
+      };
+    } else {
+      return {
+        id: "",
+        name: "",
+        user_id: "",
+        created_at: "",
+        enable_memory: false,
+        memory: "",
+        maximum_memory_tokens: 1024,
+        system_prompt: "",
+        starred: false,
+        maximum_input_tokens: 5120,
+        model_name: "gpt-4",
+        custom_model_name: "",
+      };
+    }
+  }
 
   const FormSection = ({
     title,
@@ -162,7 +164,8 @@ export default function ThreadEditorDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
       <DialogContent
-        key={defaultThread?.id} // ここを追加
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        key={defaultThread?.id}
         className="max-h-full md:max-h-[90vh] max-w-3xl overflow-hidden flex flex-col"
       >
         <DialogHeader>
@@ -410,26 +413,27 @@ export default function ThreadEditorDialog({
                 />
               )}
             </FormSection>
+
+            <DialogFooter className="pt-4">
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                onClick={form.handleSubmit(onSubmit)}
+              >
+                {form.formState.isSubmitting ? (
+                  <>
+                    <Loader2Icon className="animate-spin mr-2 w-5 h-5" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+            </DialogFooter>
           </form>
-          <DialogFooter className="pt-4">
-            <Button
-              type="submit"
-              disabled={isSaving}
-              onClick={form.handleSubmit(onSubmit)}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2Icon className="animate-spin mr-2 w-5 h-5" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-          </DialogFooter>
         </Form>
       </DialogContent>
     </Dialog>
