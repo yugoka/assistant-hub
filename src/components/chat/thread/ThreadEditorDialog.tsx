@@ -18,7 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Dispatch, useEffect } from "react";
+import { Dispatch, useEffect, useState } from "react";
 import { Thread } from "@/types/Thread";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Label } from "@/components/ui/label";
+import { RefetchOptions } from "react-query";
+import { Loader2Icon } from "lucide-react";
 
 // Define model options as a constant array
 const MODEL_OPTIONS = ["gpt-4o", "gpt-4o-mini"];
@@ -62,13 +64,16 @@ type Props = {
   defaultThread: Thread | null;
   isOpen: boolean;
   setIsOpen: Dispatch<boolean>;
+  refetch: (options?: RefetchOptions) => void;
 };
 
 export default function ThreadEditorDialog({
   isOpen,
   setIsOpen,
   defaultThread,
+  refetch,
 }: Props) {
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const form = useForm<ThreadSettingsFormValues>({
     resolver: zodResolver(threadSettingsFormSchema),
     defaultValues: defaultThread || {
@@ -107,6 +112,7 @@ export default function ThreadEditorDialog({
   });
 
   const onSubmit = async (values: ThreadSettingsFormValues) => {
+    setIsSaving(true);
     try {
       // If "Other" is selected, use the custom model name
       if (values.model_name === "Other") {
@@ -124,8 +130,11 @@ export default function ThreadEditorDialog({
       });
       // Proceed with form submission logic here
       setIsOpen(false);
+      refetch();
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -361,7 +370,16 @@ export default function ThreadEditorDialog({
 
             {/* Form Footer */}
             <DialogFooter>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2Icon className="animate-spin mr-2 w-5 h-5" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
               <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
               </DialogClose>

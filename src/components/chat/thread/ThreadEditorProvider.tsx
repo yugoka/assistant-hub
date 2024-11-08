@@ -2,6 +2,7 @@
 import ThreadEditorDialog from "@/components/chat/thread/ThreadEditorDialog";
 import { Thread } from "@/types/Thread";
 import { createContext, useContext, ReactNode, useState } from "react";
+import { useThread } from "./ThreadProvider";
 
 interface ThreadEditorContextType {
   openThreadEditor: (thread?: Thread) => void;
@@ -19,6 +20,7 @@ export default function ThreadEditorProviderWrapper({
   const [isThreadEditorMenuOpen, setIsThreadEditorMenuOpen] =
     useState<boolean>(false);
   const [currentThread, setCurrentThread] = useState<Thread | null>(null);
+  const { refetch } = useThread();
 
   const openThreadEditor = (thread?: Thread) => {
     if (!thread) {
@@ -38,6 +40,7 @@ export default function ThreadEditorProviderWrapper({
         isOpen={isThreadEditorMenuOpen}
         setIsOpen={setIsThreadEditorMenuOpen}
         defaultThread={currentThread}
+        refetch={refetch}
       />
       {children}
     </ThreadEditorContext.Provider>
