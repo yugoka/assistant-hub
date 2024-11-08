@@ -1,8 +1,13 @@
+"use client";
 import { MenuIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { useNavigation } from "@/contexts/NavigaitonContext";
 
-export function NavigationButton({ className = "" }: { className?: string }) {
+export function NavigationMenuOpenButton({
+  className = "",
+}: {
+  className?: string;
+}) {
   const { setIsOpen } = useNavigation();
 
   return (

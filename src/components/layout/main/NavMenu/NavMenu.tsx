@@ -1,5 +1,4 @@
 "use client";
-import { BrandIcon } from "@/components/common/icons/BrandIcon";
 import { MessageSquareTextIcon, SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import NavMenuDropDown from "./NavMenuDropDown";
@@ -9,7 +8,6 @@ import ChatNavigation from "./Chat/ChatNavigation";
 import { ToolIcon } from "@/components/common/icons/ToolIcon";
 import ToolsNavigation from "./Tools/ToolsNavigation";
 import { Button } from "@/components/ui/button";
-import SetttingsDialog from "@/components/settings/SettingsDialog";
 import { useSettings } from "@/contexts/SettingsContext";
 
 export type NavMenuMode = {
@@ -52,6 +50,8 @@ export default function NavMenu({ onMobileMenuClose }: Props) {
   useEffect(() => {
     setCurrentNavMenuMode(getCurrentMenuMode());
   }, [pathName]);
+
+  console.log("render");
 
   return (
     <div className="flex flex-col h-full">
