@@ -8,6 +8,8 @@ import { createClient } from "@/utils/supabase/client";
 import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
 import NewChatMessage from "./NewChatMessage";
+import { useThread } from "./thread/ThreadProvider";
+import ChatScreenHeader from "./ChatScreenHeader";
 
 type Props = {
   threadID: string | null | undefined;
@@ -30,6 +32,7 @@ export default function ChatScreen({ threadID }: Props) {
     threadID,
   });
 
+  const { thread } = useThread();
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollContainer = useRef<HTMLDivElement>(null);
 
@@ -105,6 +108,7 @@ export default function ChatScreen({ threadID }: Props) {
 
   return (
     <div className="flex h-full flex-col w-full">
+      <ChatScreenHeader thread={thread} />
       <div
         className="flex-1 overflow-y-auto py-4 px-4 md:px-6"
         ref={scrollContainer}
@@ -123,10 +127,10 @@ export default function ChatScreen({ threadID }: Props) {
         )}
       </div>
 
-      {/* スクロールが最下部でない場合に表示されるボタン */}
+      {/* 既存のスクロールボタンとフォーム */}
       <Button
         variant="outline"
-        className={`opacity-100 disabled:opacity-0 w-10 h-10 fixed bottom-24 right-4 rounded-full transition-opacity duration-300 delay-100 `}
+        className={`opacity-100 disabled:opacity-0 w-10 h-10 fixed bottom-24 right-4 rounded-full transition-opacity duration-300 delay-100`}
         onClick={() => scrollToBottom()}
         disabled={isAtBottom}
       >
@@ -135,7 +139,7 @@ export default function ChatScreen({ threadID }: Props) {
 
       <div className="border-t bg-gray-100 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
         <form
-          className="flex items-center gap-2 max-w-2xl mx-auto"
+          className="flex items-center gap-2 max-w-3xl mx-auto"
           onSubmit={handleSubmit}
         >
           <Input

@@ -4,7 +4,7 @@ import { Inter as FontSans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
-import { ThemeProvider } from "@/contexts/ThemeProvider";
+import { ThemeProvider } from "@/contexts/ThemeProviderWrapper";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -24,7 +24,12 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.className} overflow-hidden`}>
+    <html
+      lang="en"
+      className={`${GeistSans.className} overflow-hidden`}
+      // next-themesの警告対処用。他のElementに対する警告には影響しません
+      suppressHydrationWarning
+    >
       <body
         className={cn("bg-background font-sans antialiased", fontSans.variable)}
       >

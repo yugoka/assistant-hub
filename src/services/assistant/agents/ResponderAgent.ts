@@ -1,6 +1,10 @@
 import { ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
-import { ChatCompletionChunk } from "openai/resources";
+import {
+  ChatCompletionChunk,
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+} from "openai/resources";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
 import { v4 as uuidv4 } from "uuid";
 import { Message, ToolMessage } from "@/types/Message";
@@ -13,9 +17,11 @@ import {
   OpenAIToolWithExecutor,
 } from "../../schema/openapiToTools";
 import { Thread } from "@/types/Thread";
-import { getThreadByID } from "@/services/threads";
+import { getThreadByID, updateThread } from "@/services/threads";
 import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
+import { getMemoryPrompt } from "@/prompts/memory";
+import { generateMemory } from "./MemoryAgent";
 
 const MAX_STEPS = 5;
 
@@ -143,11 +149,13 @@ export default class ResponderAgent {
       this.inputMessages,
       this.thread?.maximum_input_tokens || 0
     );
+
     console.log(
       `[Performance] initMessages took ${(
         performance.now() - startTime
-      ).toFixed(0)} ms`
+      ).toFixed(0)} ms,`
     );
+    console.log(`Trimmed message length: ${this.currentMessages.length}`);
   }
 
   private async processSteps(
@@ -214,6 +222,7 @@ export default class ResponderAgent {
       Promise.all([
         this.saveMessages(messagesToSave),
         this.saveToolCalls(toolCallsToSave),
+        this.saveMemory(messagesToSave),
       ])
     );
   }
@@ -273,15 +282,25 @@ export default class ResponderAgent {
 
   private async fetch() {
     try {
+      // ツール選定などに影響を与えないために、この段階でシステムプロンプト等を入れる
+      const systemMessages = this.getSystemMessages();
+      const chatMessages = convertToOpenAIMessages(this.currentMessages);
+
+      const modelName =
+        this.model ||
+        this.thread?.model_name ||
+        process.env.CHATGPT_DEFAULT_MODEL ||
+        "gpt-4o";
+
       const tools =
         this.steps < this.maxToolCallSteps && this.tools.length
           ? this.tools
           : undefined;
 
       const response = await this.openai.chat.completions.create({
-        model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
+        model: modelName,
         stream: true,
-        messages: convertToOpenAIMessages(this.currentMessages),
+        messages: [...systemMessages, ...chatMessages],
         tools,
       });
       return response.toReadableStream();
@@ -292,6 +311,28 @@ export default class ResponderAgent {
       console.error(this.currentMessages);
       throw new Error(`${e}`);
     }
+  }
+
+  private getSystemMessages(): ChatCompletionMessageParam[] {
+    const result: ChatCompletionMessageParam[] = [];
+
+    // システムプロンプト
+    if (this.thread?.system_prompt) {
+      result.push({
+        role: "system",
+        content: this.thread.system_prompt,
+      });
+    }
+
+    // 長期記憶
+    if (this.thread?.enable_memory && this.thread.memory) {
+      result.push({
+        role: "system",
+        content: getMemoryPrompt(this.thread.memory),
+      });
+    }
+
+    return result;
   }
 
   private getToolByName(name: string): OpenAIToolWithExecutor | undefined {
@@ -342,6 +383,9 @@ export default class ResponderAgent {
       for await (const message of newMessages) {
         const newMessage = message;
 
+        // システムメッセージは保存しない
+        if (newMessage.role === "system") continue;
+
         // 保存用にツール情報を付加する
         if (newMessage.role === "assistant" && newMessage.tool_calls?.length) {
           newMessage.tool_calls = newMessage.tool_calls.map((toolCall) => {
@@ -388,6 +432,33 @@ export default class ResponderAgent {
       await Promise.all(promises);
     } catch (error) {
       console.error("Failed to save toolCall:", error);
+    }
+  }
+
+  private async saveMemory(newMessages: Message[]) {
+    if (this.thread && this.thread.enable_memory) {
+      const prunedNewMessages: Message[] = newMessages.map((msg) => {
+        if (msg.role === "user") return msg;
+        // ユーザーメッセージ以外は雑に最初の100文字をいれる
+        else
+          return { ...msg, content: msg.content?.slice(0, 100) + "..." || "" };
+      });
+      const newMemory = await generateMemory({
+        currentMemory: this.thread.memory || "",
+        userInputString: stringfyMessagesForLM(prunedNewMessages),
+        maxTokens: this.thread.maximum_memory_tokens,
+        // コスト削減のために一旦固定にする
+        model: "gpt-4o-mini",
+      });
+
+      if (newMemory !== this.thread.memory) {
+        await updateThread({ id: this.thread.id, memory: newMemory });
+        console.log("[Memory Saved] Length: ", newMemory.length);
+      } else {
+        console.log("[MemoryManager] No Update");
+      }
+    } else {
+      throw new Error("Thread not initialized");
     }
   }
 }

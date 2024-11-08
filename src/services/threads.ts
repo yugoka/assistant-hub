@@ -109,8 +109,8 @@ export interface UpdateThreadInput {
   maximum_memory_tokens?: number;
   memory?: string;
   system_prompt?: string;
-  protected?: boolean;
-  maximum_initial_input_tokens?: number;
+  starred?: boolean;
+  maximum_input_tokens?: number;
   model_name?: string;
 }
 export const updateThread = async (input: UpdateThreadInput) => {
@@ -147,7 +147,7 @@ export const deleteThread = async (input: DeleteThreadInput) => {
     .from("threads")
     .delete()
     .eq("id", input.id)
-    .eq("protected", false);
+    .eq("starred", false);
 
   if (error) throw error;
 

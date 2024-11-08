@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { fetchGenerationTask } from "@/utils/generationTask";
 import { useState } from "react";
-import { getInstructionExampleGenerationPrompt } from "@/prompts/instructionExamplesGenerationPrompt";
+import { getInstructionExampleGenerationPrompt } from "@/prompts/instructionExamplesGeneration";
 
 type InstructionExamplesProps = {
   form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
