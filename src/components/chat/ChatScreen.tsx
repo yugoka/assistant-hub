@@ -9,8 +9,7 @@ import { Message } from "@/types/Message";
 import ErrorLarge from "../common/ErrorLarge";
 import NewChatMessage from "./NewChatMessage";
 import { useThread } from "./thread/ThreadProvider";
-import { useThreadEditor } from "./thread/ThreadEditorProvider";
-import { CogIcon, Settings2Icon, SlidersIcon } from "lucide-react";
+import ChatScreenHeader from "./ChatScreenHeader";
 
 type Props = {
   threadID: string | null | undefined;
@@ -34,8 +33,6 @@ export default function ChatScreen({ threadID }: Props) {
   });
 
   const { thread } = useThread();
-  const { openThreadEditor } = useThreadEditor();
-
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollContainer = useRef<HTMLDivElement>(null);
 
@@ -111,25 +108,7 @@ export default function ChatScreen({ threadID }: Props) {
 
   return (
     <div className="flex h-full flex-col w-full">
-      {/* ヘッダー部分を追加 */}
-      <div className="bg-white dark:bg-gray-950 px-4 py-2 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-medium truncate">
-            {thread?.name || "New Chat"}
-          </h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-            onClick={() => openThreadEditor(thread)}
-            disabled={!thread}
-          >
-            <Settings2Icon className="h-5 w-5" />
-            <span className="sr-only">Thread Settings</span>
-          </Button>
-        </div>
-      </div>
-
+      <ChatScreenHeader thread={thread} />
       <div
         className="flex-1 overflow-y-auto py-4 px-4 md:px-6"
         ref={scrollContainer}
