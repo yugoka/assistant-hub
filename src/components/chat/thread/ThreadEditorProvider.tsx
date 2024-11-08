@@ -4,7 +4,7 @@ import { Thread } from "@/types/Thread";
 import { createContext, useContext, ReactNode, useState } from "react";
 
 interface ThreadEditorContextType {
-  openThreadEditor: (thread: Thread) => void;
+  openThreadEditor: (thread?: Thread) => void;
 }
 
 const ThreadEditorContext = createContext<ThreadEditorContextType | undefined>(
@@ -20,7 +20,10 @@ export default function ThreadEditorProviderWrapper({
     useState<boolean>(false);
   const [currentThread, setCurrentThread] = useState<Thread | null>(null);
 
-  const openThreadEditor = (thread: Thread) => {
+  const openThreadEditor = (thread?: Thread) => {
+    if (!thread) {
+      return;
+    }
     setIsThreadEditorMenuOpen(true);
     setCurrentThread(thread);
   };
