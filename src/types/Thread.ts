@@ -9,5 +9,5 @@ export type Thread = {
   system_prompt: string;
   protected: boolean;
   maximum_input_tokens: number;
-  model_name?: string;
+  model_name: string;
 };
