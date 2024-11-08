@@ -17,10 +17,11 @@ import {
   OpenAIToolWithExecutor,
 } from "../../schema/openapiToTools";
 import { Thread } from "@/types/Thread";
-import { getThreadByID } from "@/services/threads";
+import { getThreadByID, updateThread } from "@/services/threads";
 import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
 import { getMemoryPrompt } from "@/prompts/memory";
+import { generateMemory } from "./MemoryAgent";
 
 const MAX_STEPS = 5;
 
@@ -221,6 +222,7 @@ export default class ResponderAgent {
       Promise.all([
         this.saveMessages(messagesToSave),
         this.saveToolCalls(toolCallsToSave),
+        this.saveMemory(messagesToSave),
       ])
     );
   }
@@ -430,6 +432,25 @@ export default class ResponderAgent {
       await Promise.all(promises);
     } catch (error) {
       console.error("Failed to save toolCall:", error);
+    }
+  }
+
+  private async saveMemory(newMessages: Message[]) {
+    if (this.thread && this.thread.enable_memory) {
+      const newUserMessages = newMessages.filter((msg) => msg.role === "user");
+      const newMemory = await generateMemory({
+        currentMemory: this.thread.memory || "",
+        userInputString: stringfyMessagesForLM(newUserMessages),
+        maxTokens: this.thread.maximum_memory_tokens,
+        model: this.thread.model_name,
+      });
+
+      if (newMemory !== this.thread.memory) {
+        await updateThread({ id: this.thread.id, memory: newMemory });
+        console.log("[Memory Saved] Length: ", newMemory.length);
+      }
+    } else {
+      throw new Error("Thread not initialized");
     }
   }
 }
