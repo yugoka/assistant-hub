@@ -284,13 +284,19 @@ export default class ResponderAgent {
       const systemMessages = this.getSystemMessages();
       const chatMessages = convertToOpenAIMessages(this.currentMessages);
 
+      const modelName =
+        this.model ||
+        this.thread?.model_name ||
+        process.env.CHATGPT_DEFAULT_MODEL ||
+        "gpt-4o";
+
       const tools =
         this.steps < this.maxToolCallSteps && this.tools.length
           ? this.tools
           : undefined;
 
       const response = await this.openai.chat.completions.create({
-        model: this.model || process.env.CHATGPT_DEFAULT_MODEL || "gpt-4o",
+        model: modelName,
         stream: true,
         messages: [...systemMessages, ...chatMessages],
         tools,
