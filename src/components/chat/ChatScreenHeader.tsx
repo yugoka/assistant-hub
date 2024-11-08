@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { Settings2Icon } from "lucide-react";
 import { useThreadEditor } from "./thread/ThreadEditorProvider";
 import { NavigationMenuOpenButton } from "../common/NavigationMenuOpenButton";
+import HeaderBase from "../layout/HeaderBase";
 
 type Props = {
   thread?: Thread;
@@ -11,8 +12,8 @@ export default function ChatScreenHeader({ thread }: Props) {
   const { openThreadEditor } = useThreadEditor();
 
   return (
-    <div className="bg-white dark:bg-gray-950 px-4 py-2 sticky top-0 z-10">
-      <div className="max-w-3xl mx-auto flex items-center justify-between">
+    <HeaderBase>
+      <div className="mx-auto flex items-center justify-between">
         <NavigationMenuOpenButton className="block md:hidden" />
         <h1 className="text-lg font-medium truncate">
           {thread?.name || "New Chat"}
@@ -28,6 +29,6 @@ export default function ChatScreenHeader({ thread }: Props) {
           <span className="sr-only">Thread Settings</span>
         </Button>
       </div>
-    </div>
+    </HeaderBase>
   );
 }

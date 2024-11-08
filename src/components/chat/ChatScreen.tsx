@@ -139,7 +139,7 @@ export default function ChatScreen({ threadID }: Props) {
 
       <div className="border-t bg-gray-100 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
         <form
-          className="flex items-center gap-2 max-w-2xl mx-auto"
+          className="flex items-center gap-2 max-w-3xl mx-auto"
           onSubmit={handleSubmit}
         >
           <Input
