@@ -29,8 +29,7 @@ export default async function MainLayout({
         <SettingsProviderWrapper>
           <TooltipProviderWrapper>
             <div className="flex flex-col h-dvh w-full">
-              <MainLayoutHeader />
-              <div className="flex h-[calc(100dvh-49px)] md:h-full w-full">
+              <div className="flex h-dvh md:h-full w-full">
                 <div className="hidden w-64 shrink-0 border-r bg-gray-100 dark:border-gray-800 dark:bg-gray-900 md:block">
                   <div className="flex h-full flex-col justify-between pt-6">
                     <NavMenu />

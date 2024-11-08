@@ -1,4 +1,3 @@
-import { BrandIcon } from "@/components/common/icons/BrandIcon";
 import Link from "next/link";
 import { MainLayoutHeaderSheet } from "./HeaderSheet";
 
