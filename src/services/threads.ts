@@ -147,7 +147,7 @@ export const deleteThread = async (input: DeleteThreadInput) => {
     .from("threads")
     .delete()
     .eq("id", input.id)
-    .eq("protected", false);
+    .eq("starred", false);
 
   if (error) throw error;
 
