@@ -3,6 +3,7 @@ import { Thread } from "@/types/Thread";
 import NavMenuListItem from "../NavMenuListItem";
 import { MouseEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { StarIcon } from "lucide-react";
 
 type Props = {
   thread: Thread;
@@ -31,7 +32,10 @@ export default function ThreadListItem({ thread, isSelected }: Props) {
         isSelected={isSelected}
         renderDeleteButton={!thread.starred}
       >
-        {thread.name}
+        <span className="flex items-center">
+          {thread.starred && <StarIcon className="inline w-3 h-3 mr-1" />}
+          {thread.name}
+        </span>
       </NavMenuListItem>
     </>
   );

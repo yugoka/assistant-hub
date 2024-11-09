@@ -47,6 +47,8 @@ export const getThreads = async ({
   let query = supabase
     .from("threads")
     .select("*")
+    // スター付きを戦闘に表示する雑実装
+    .order("starred", { ascending: false })
     .order("created_at", { ascending: false });
   if (userId) {
     query = query.eq("user_id", userId);
