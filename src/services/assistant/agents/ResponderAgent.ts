@@ -458,7 +458,7 @@ export default class ResponderAgent {
         console.log("[MemoryManager] No Update");
       }
     } else {
-      throw new Error("Thread not initialized");
+      console.log("[MemoryManager] Skipped: Memory not enabled");
     }
   }
 }

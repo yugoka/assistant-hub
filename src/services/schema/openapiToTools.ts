@@ -3,7 +3,10 @@ import { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 import { ChatCompletionTool } from "openai/resources";
 import { Resolver } from "@stoplight/json-ref-resolver";
 import { Tool } from "@/types/Tool";
-import { getExecutor } from "../assistant/toolExecution/toolExecutor";
+import {
+  getCustomHeaders,
+  getExecutor,
+} from "../assistant/toolExecution/toolExecutor";
 const resolver = new Resolver();
 
 export type ExecutorFunction = (
@@ -119,7 +122,9 @@ export async function convertRegisteredToolsToOpenAITools(
           type: "function",
           function: {
             name: uniqueName,
-            description: `${method.toUpperCase()} ${path}: ${
+            description: `
+Tool Name: ${inputTool.name}, Description: ${inputTool.description}
+${method.toUpperCase()} ${path}: ${
               operation.summary || operation.description || ""
             }`,
             parameters: processToolParameters(operation),
@@ -127,7 +132,12 @@ export async function convertRegisteredToolsToOpenAITools(
           path,
           method,
           operationId: operation.operationId,
-          execute: getExecutor(method, path, serverUrl),
+          execute: getExecutor(
+            method,
+            path,
+            serverUrl,
+            getCustomHeaders(inputTool)
+          ),
           baseTool: inputTool,
         };
 
