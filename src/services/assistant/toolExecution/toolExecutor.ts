@@ -1,4 +1,5 @@
 import { ExecutorFunction } from "@/services/schema/openapiToTools";
+import { Tool } from "@/types/Tool";
 import axios, { AxiosRequestConfig, Method } from "axios";
 
 /**
@@ -57,14 +58,57 @@ export async function executeApiCall(
 export function getExecutor(
   method: string,
   path: string,
-  serverUrl: string
+  serverUrl: string,
+  customHeaders?: Record<string, string>
 ): ExecutorFunction {
-  return async (argsString: string, customHeadersString?: string) => {
-    console.log(JSON.parse(argsString));
-    const args = JSON.parse(argsString);
-    const customHeaders = customHeadersString
-      ? JSON.parse(customHeadersString)
-      : undefined;
-    return executeApiCall(args, method, path, serverUrl, customHeaders);
+  return async (argsString: string) => {
+    try {
+      const args = JSON.parse(argsString);
+      return executeApiCall(args, method, path, serverUrl, customHeaders);
+    } catch (e) {
+      return `Failed to parse args JSON: ${e}`;
+    }
   };
+}
+
+/**
+ * Generates custom headers based on the Tool's authentication type and credential.
+ * @param tool - The Tool object containing authentication info.
+ * @returns An object representing custom headers or undefined.
+ */
+export function getCustomHeaders(
+  tool: Tool
+): Record<string, string> | undefined {
+  switch (tool.auth_type) {
+    case "None":
+      return undefined;
+
+    case "Bearer":
+      if (tool.credential) {
+        // Return the Authorization header with the Bearer token
+        return { Authorization: `Bearer ${tool.credential}` };
+      } else {
+        throw new Error("Bearer token is missing in tool credential.");
+      }
+
+    case "Custom Header":
+      if (tool.credential) {
+        try {
+          // Parse the credential JSON string into an object
+          const headers = JSON.parse(tool.credential);
+          if (typeof headers === "object" && headers !== null) {
+            return headers as Record<string, string>;
+          } else {
+            throw new Error("Custom headers credential is not a valid object.");
+          }
+        } catch (error) {
+          throw new Error("Invalid JSON in custom headers credential.");
+        }
+      } else {
+        throw new Error("Custom headers are missing in tool credential.");
+      }
+
+    default:
+      throw new Error(`Unsupported auth_type: ${tool.auth_type}`);
+  }
 }
