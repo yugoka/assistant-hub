@@ -19,7 +19,7 @@ export async function executeApiCall(
   customHeaders?: Record<string, string>
 ): Promise<any> {
   try {
-    let url = `${serverUrl}${path}`;
+    let url = `${serverUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
     const config: AxiosRequestConfig = {
       method: method.toUpperCase() as Method,
       headers: {

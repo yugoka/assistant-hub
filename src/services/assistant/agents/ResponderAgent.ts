@@ -320,7 +320,7 @@ export default class ResponderAgent {
     if (this.thread?.system_prompt) {
       result.push({
         role: "system",
-        content: this.thread.system_prompt,
+        content: fillDateInSystemPrompt(this.thread.system_prompt),
       });
     }
 
