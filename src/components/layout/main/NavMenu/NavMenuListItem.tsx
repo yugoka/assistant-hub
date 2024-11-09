@@ -9,6 +9,7 @@ type Props = {
   href: string;
   onClickDeleteButton?: (event: MouseEvent) => void;
   isSelected: boolean;
+  renderDeleteButton?: boolean;
 };
 
 export default function NavMenuListItem({
@@ -16,12 +17,12 @@ export default function NavMenuListItem({
   href,
   onClickDeleteButton,
   isSelected,
+  renderDeleteButton = true,
 }: Props) {
   const [isDeleteButtonClicked, setIsDeleteButtonClicked] =
     useState<boolean>(false);
 
   const handleClickDeleteButton = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     setIsDeleteButtonClicked(true);
     if (onClickDeleteButton) {
@@ -45,17 +46,19 @@ export default function NavMenuListItem({
           {children}
         </span>
 
-        <Button
-          variant="link"
-          className="flex my-0 flex-grow-0 flex-shrink-0 rounded-full w-6 h-6 p-0 ml-2 hover:bg-gray-100 "
-          onClick={handleClickDeleteButton}
-        >
-          {isDeleteButtonClicked ? (
-            <Loader2 className="w-4 animate-spin" />
-          ) : (
-            <TrashIcon className="w-4" />
-          )}
-        </Button>
+        {renderDeleteButton && (
+          <Button
+            variant="link"
+            className="flex my-0 flex-grow-0 flex-shrink-0 rounded-full w-6 h-6 p-0 ml-2 hover:bg-gray-100 "
+            onClick={handleClickDeleteButton}
+          >
+            {isDeleteButtonClicked ? (
+              <Loader2 className="w-4 animate-spin" />
+            ) : (
+              <TrashIcon className="w-4" />
+            )}
+          </Button>
+        )}
       </Link>
     </>
   );

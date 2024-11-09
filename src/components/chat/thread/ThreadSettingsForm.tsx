@@ -88,7 +88,7 @@ export default function ThreadSettingsForm({
 
   useEffect(() => {
     form.reset(getDefaultValues(defaultThread));
-  }, [defaultThread?.id]);
+  }, [defaultThread]);
 
   const selectedModelName = useWatch({
     control: form.control,

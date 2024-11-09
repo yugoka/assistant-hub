@@ -1,6 +1,5 @@
 "use client";
 import { MessageSquareTextIcon, SettingsIcon } from "lucide-react";
-import Link from "next/link";
 import NavMenuDropDown from "./NavMenuDropDown";
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -52,7 +51,7 @@ export default function NavMenu({ onMobileMenuClose }: Props) {
   }, [pathName]);
 
   return (
-    <div className="flex flex-col h-full min-w-0">
+    <div className="flex flex-col h-full min-w-32">
       <div className="flex flex-col px-4 py-3 border-b dark:border-gray-800">
         <div className="flex justify-center">
           <div className="grow shrink">

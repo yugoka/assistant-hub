@@ -52,7 +52,11 @@ export const generateMemory = async ({
     const resultJson = response.choices[0].message.content;
     const result: MemoryGenerationResponseFormat = JSON.parse(resultJson || "");
 
-    if (result.need_update && result.updated_memory) {
+    if (
+      result.need_update &&
+      result.updated_memory !== undefined &&
+      result.updated_memory !== null
+    ) {
       // maxTokensで切り捨てる
       return await trimTextByMaxTokens(result.updated_memory, maxTokens);
     } else {
