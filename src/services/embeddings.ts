@@ -75,7 +75,7 @@ export const averageEmbeddings = (embeddings: number[][]): number[] => {
     }
   }
 
-  return sumEmbedding.map((sum) => sum / embeddings.length);
+  return normalize(sumEmbedding);
 };
 
 // ==============
@@ -114,3 +114,14 @@ export const base64ToFloat32ArrayNode = (base64String: string): number[] => {
   // Float32ArrayをNumberの配列に変換
   return Array.from(floatArray);
 };
+
+// 正規化
+function normalize(vector: number[]): number[] {
+  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+
+  if (magnitude === 0) {
+    return new Array(vector.length).fill(0);
+  }
+
+  return vector.map((val) => val / magnitude);
+}
