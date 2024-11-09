@@ -29,6 +29,7 @@ export default function ThreadListItem({ thread, isSelected }: Props) {
         href={`/chat?thread_id=${thread.id}`}
         onClickDeleteButton={deleteThread}
         isSelected={isSelected}
+        renderDeleteButton={!thread.starred}
       >
         {thread.name}
       </NavMenuListItem>

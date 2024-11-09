@@ -1,5 +1,6 @@
 export const getMemoryPrompt = (memory: string): string => {
-  return `The following is your long-term memory. It includes things that the user has asked you to remember and information from past conversations that you have determined would be beneficial to remember. After a conversation with a user, memories are dynamically added or removed.
+  return `The following is your long-term memory. It includes things that the user has asked you to remember and information from past conversations that you have determined would be beneficial to remember. 
+Long-term memory is automatically added and removed based on the conversation between you and the user. By explicitly stating what you want to remember or forget in a message, you can ensure that long-term memory is updated.
 [Assistant's Memory]
 ${memory}
 `;
