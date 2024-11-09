@@ -122,7 +122,9 @@ export async function convertRegisteredToolsToOpenAITools(
           type: "function",
           function: {
             name: uniqueName,
-            description: `${method.toUpperCase()} ${path}: ${
+            description: `
+Tool Name: ${inputTool.name}, Description: ${inputTool.description}
+${method.toUpperCase()} ${path}: ${
               operation.summary || operation.description || ""
             }`,
             parameters: processToolParameters(operation),
