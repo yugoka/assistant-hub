@@ -43,38 +43,69 @@ const openAPIJsonSchema = z.string().refine(
   }
 );
 
-export const toolEditorFormSchema = z.object({
-  id: z.string().optional(),
-  name: z
-    .string()
-    .min(2, {
-      message: "Name must be at least 2 characters.",
-    })
-    .max(50, { message: "Name must be at most 50 characters." }),
-  description: z
-    .string()
-    .min(2, {
-      message: "Description must be at least 2 characters.",
-    })
-    .max(1000, { message: "Description must be at most 1000 characters." }),
-  schema: openAPIJsonSchema,
-  auth_type: z.enum(authTypes),
-  credential: z.string(),
-  execution_count: z.number().optional(),
-  success_count: z.number().optional(),
-  average_execution_time: z.number().optional(),
-  instruction_examples: z
-    .array(
-      z.object({
-        text: z.string().min(2, {
-          message: "Instruction example must be at least 2 characters.",
-        }),
+export const toolEditorFormSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z
+      .string()
+      .min(2, {
+        message: "Name must be at least 2 characters.",
       })
-    )
-    .min(1, {
-      message: "At least one instruction example is necessary.",
-    }),
-});
+      .max(50, { message: "Name must be at most 50 characters." }),
+    description: z
+      .string()
+      .min(2, {
+        message: "Description must be at least 2 characters.",
+      })
+      .max(1000, { message: "Description must be at most 1000 characters." }),
+    schema: openAPIJsonSchema,
+    auth_type: z.enum(authTypes),
+    credential: z.string().optional(),
+    execution_count: z.number().optional(),
+    success_count: z.number().optional(),
+    average_execution_time: z.number().optional(),
+    instruction_examples: z
+      .array(
+        z.object({
+          text: z.string().min(2, {
+            message: "Instruction example must be at least 2 characters.",
+          }),
+        })
+      )
+      .min(1, {
+        message: "At least one instruction example is necessary.",
+      }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.auth_type === "Bearer") {
+      if (!data.credential || data.credential.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["credential"],
+          message: "Bearer Token is required for Bearer authentication.",
+        });
+      }
+    } else if (data.auth_type === "Custom Header") {
+      if (!data.credential || data.credential.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["credential"],
+          message:
+            "Custom Headers are required for Custom Header authentication.",
+        });
+      } else {
+        try {
+          JSON.parse(data.credential);
+        } catch (e) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["credential"],
+            message: "Custom Headers must be valid JSON.",
+          });
+        }
+      }
+    }
+  });
 
 type Props = {
   form: UseFormReturn<z.infer<typeof toolEditorFormSchema>, any, undefined>;
@@ -93,6 +124,9 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
       setIsSaving(false);
     }
   };
+
+  // Watch the value of auth_type to conditionally render credential fields
+  const authTypeValue = form.watch("auth_type");
 
   return (
     <Form {...form}>
@@ -185,7 +219,6 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
                   <FormLabel>Authentication Type</FormLabel>
                   <FormControl>
                     <RadioGroup
-                      defaultValue={field.value}
                       value={field.value}
                       onValueChange={field.onChange}
                       className="flex items-center gap-4"
@@ -204,6 +237,16 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
                         <RadioGroupItem id="auth-bearer" value="Bearer" />
                         Bearer
                       </Label>
+                      <Label
+                        htmlFor="auth-custom-header"
+                        className="flex items-center gap-2"
+                      >
+                        <RadioGroupItem
+                          id="auth-custom-header"
+                          value="Custom Header"
+                        />
+                        Custom Header
+                      </Label>
                     </RadioGroup>
                   </FormControl>
                   <FormMessage />
@@ -211,24 +254,47 @@ export default function ToolEditor({ form, onSubmit, variant }: Props) {
               )}
             />
 
-            {/* API Key */}
-            <FormField
-              control={form.control}
-              name="credential"
-              render={({ field }) => (
-                <FormItem className="grid gap-2">
-                  <FormLabel>API Key</FormLabel>
-                  <FormControl>
-                    <Input
-                      id="api_key"
-                      placeholder="Enter your API key"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Credential Fields */}
+            {authTypeValue === "Bearer" && (
+              <FormField
+                control={form.control}
+                name="credential"
+                render={({ field }) => (
+                  <FormItem className="grid gap-2">
+                    <FormLabel>Bearer Token</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="bearer_token"
+                        placeholder="Enter your bearer token"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {authTypeValue === "Custom Header" && (
+              <FormField
+                control={form.control}
+                name="credential"
+                render={({ field }) => (
+                  <FormItem className="grid gap-2">
+                    <FormLabel>Custom Headers (JSON)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="custom_headers"
+                        placeholder='Enter custom headers in JSON format, e.g., {"Authorization": "Bearer TOKEN"}'
+                        className="min-h-[120px] font-mono text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Instruction Examples */}
             <InstructionExamples form={form} />

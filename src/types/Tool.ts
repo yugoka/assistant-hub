@@ -1,4 +1,9 @@
-export const authTypes: [string, ...string[]] = ["None", "Bearer", "Basic"];
+export const authTypes: [string, ...string[]] = [
+  "None",
+  "Bearer",
+  "Custom Header",
+];
+
 export type AuthType = (typeof authTypes)[number];
 
 export type Tool = {
@@ -8,7 +13,7 @@ export type Tool = {
   schema: string;
   auth_type: (typeof authTypes)[number];
   user_id: string;
-  credential: string;
+  credential?: string;
   execution_count: number;
   average_execution_time: number;
   success_count: number;
