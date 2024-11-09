@@ -1,5 +1,5 @@
 // 一旦雑に時間機能追加。日本標準時のみ
-const fillDateInSystemPrompt = (prompt: string) => {
+export const fillDateInSystemPrompt = (prompt: string): string => {
   return prompt.replace(
     "<japanese_time>",
     new Date().toLocaleString("ja-JP", {

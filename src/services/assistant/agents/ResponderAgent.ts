@@ -2,7 +2,6 @@ import { ResponderAgentParam } from "@/types/api/Assistant";
 import OpenAI from "openai";
 import {
   ChatCompletionChunk,
-  ChatCompletionMessage,
   ChatCompletionMessageParam,
 } from "openai/resources";
 import { mergeResponseObjects } from "@/utils/mergeResponseObject";
@@ -22,6 +21,7 @@ import { trimMessageHistory } from "@/services/tokenizer/tokenizer";
 import { createToolCall, CreateToolCallInput } from "@/services/tool_calls";
 import { getMemoryPrompt } from "@/prompts/memory";
 import { generateMemory } from "./MemoryAgent";
+import { fillDateInSystemPrompt } from "@/prompts/systemPrompt";
 
 const MAX_STEPS = 5;
 
@@ -318,9 +318,10 @@ export default class ResponderAgent {
 
     // システムプロンプト
     if (this.thread?.system_prompt) {
+      const prompt = fillDateInSystemPrompt(this.thread.system_prompt);
       result.push({
         role: "system",
-        content: fillDateInSystemPrompt(this.thread.system_prompt),
+        content: prompt,
       });
     }
 
