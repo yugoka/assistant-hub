@@ -45,19 +45,6 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const toolID = url.searchParams.get("tool_id");
-    const userID = url.searchParams.get("user_id");
-
-    if (!toolID && !userID) {
-      return new Response(
-        JSON.stringify({ error: "Neither tool_id nor user_id specified" }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
 
     if (toolID) {
       const result = await getToolByID({
@@ -66,8 +53,8 @@ export async function GET(req: Request) {
 
       const res = NextResponse.json(result, { status: 200 });
       return res;
-    } else if (userID) {
-      const result = await getTools({ userId: userID });
+    } else {
+      const result = await getTools();
       const res = NextResponse.json(result, { status: 200 });
       return res;
     }

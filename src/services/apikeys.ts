@@ -52,7 +52,7 @@ export const getApikeys = async ({
   userId,
   page,
   pageSize = 10,
-}: GetApikeysOptions): Promise<Apikey[]> => {
+}: GetApikeysOptions = {}): Promise<Apikey[]> => {
   const supabase = createClient();
 
   let query = supabase

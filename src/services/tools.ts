@@ -67,7 +67,7 @@ export const getTools = async ({
   userId,
   page,
   pageSize = 10,
-}: GetToolsOptions): Promise<Tool[]> => {
+}: GetToolsOptions = {}): Promise<Tool[]> => {
   const supabase = createClient();
 
   let query = supabase
