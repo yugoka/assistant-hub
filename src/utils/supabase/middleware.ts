@@ -1,78 +1,103 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+// middleware.ts
+import {
+  createServerClient,
+  parseCookieHeader,
+  serializeCookieHeader,
+  type CookieOptions,
+} from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { SignJWT } from "jose";
 
 export const updateSession = async (request: NextRequest) => {
-  // This `try/catch` block is only here for the interactive tutorial.
-  // Feel free to remove once you have Supabase connected.
   try {
-    // Create an unmodified response
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
+    // ヘッダーをクローン
+    const requestHeaders = new Headers(request.headers);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const jwtSecret = process.env.SUPABASE_JWT_SECRET!;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            // If the cookie is updated, update the cookies for the request and response
-            request.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
-          },
-          remove(name: string, options: CookieOptions) {
-            // If the cookie is removed, update the cookies for the request and response
-            request.cookies.set({
-              name,
-              value: "",
-              ...options,
-            });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            response.cookies.set({
-              name,
-              value: "",
-              ...options,
-            });
-          },
+    // サービスロールキーを使用してSupabaseクライアントを作成
+    const supabaseAdmin = createServerClient(supabaseUrl, supabaseServiceKey, {
+      cookies: {
+        getAll() {
+          return parseCookieHeader(request.headers.get("Cookie") ?? "");
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            requestHeaders.append(
+              "Set-Cookie",
+              serializeCookieHeader(name, value, options)
+            )
+          );
         },
       },
-    );
-
-    // This will refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/server-side/nextjs
-    await supabase.auth.getUser();
-
-    return response;
-  } catch (e) {
-    // If you are here, a Supabase client could not be created!
-    // This is likely because you have not set up environment variables.
-    // Check out http://localhost:3000 for Next Steps.
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
     });
+
+    // JWTが既に存在するかチェック
+    const authHeader = request.headers.get("Authorization");
+    const hasJWT =
+      request.cookies.get("sb-access-token") ||
+      (authHeader && authHeader.startsWith("Bearer "));
+
+    if (!hasJWT) {
+      // サービスAPIキーをヘッダーから取得
+      const serviceApiKey = request.headers.get("x-service-api-key");
+      if (serviceApiKey) {
+        // authenticate_api_key関数を呼び出してユーザーIDを取得
+        const { data: userId, error } = await supabaseAdmin.rpc(
+          "authenticate_api_key",
+          {
+            api_key: serviceApiKey,
+          }
+        );
+
+        if (error || !userId) {
+          // 認証失敗
+          return new NextResponse("Invalid API Key", { status: 401 });
+        }
+
+        // JWTペイロードを作成
+        const payload = {
+          sub: userId,
+          aud: "authenticated",
+          role: "authenticated",
+        };
+
+        // JWTを生成
+        const token = await new SignJWT(payload)
+          .setExpirationTime("1h")
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(jwtSecret));
+
+        console.log("Generated Token:", token);
+
+        // ヘッダーの更新
+        requestHeaders.set("Authorization", `Bearer ${token}`);
+
+        // 更新したヘッダーをレスポンスに含める
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        // クッキーにJWTを設定（必要に応じて）
+        response.cookies.set("sb-access-token", token, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+        });
+
+        // リクエストを続行
+        return response;
+      }
+    }
+
+    // JWTが既に存在する場合、またはサービスAPIキーがない場合は通常の処理を続行
+    return NextResponse.next();
+  } catch (e) {
+    // エラーハンドリング
+    console.error("Error in middleware:", e);
+    return NextResponse.next();
   }
 };
