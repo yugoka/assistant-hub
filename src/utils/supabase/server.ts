@@ -1,46 +1,43 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { CookieMethodsServer, createServerClient } from "@supabase/ssr";
+import { SupabaseClientOptions } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 
 export const createClient = () => {
   const cookieStore = cookies();
-  const requestHeaders = headers();
-  const authorizationHeader = requestHeaders.get("authorization") || "";
-  const bearerToken = authorizationHeader.startsWith("Bearer ")
-    ? authorizationHeader.slice(7)
-    : "";
+  const headersStore = headers();
+
+  const createServerClientOptions: SupabaseClientOptions<"public"> & {
+    cookies: CookieMethodsServer;
+  } = {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll().map(({ name, value }) => ({ name, value }));
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach((cookie) => {
+          cookieStore.set(cookie);
+        });
+      },
+    },
+
+    global: {
+      headers: {},
+    },
+  };
+
+  // 外部API用に作成されたjwt
+  const authToken = headersStore.get("Authorization");
+  if (authToken) {
+    createServerClientOptions.global = {
+      headers: {
+        Authorization: authToken,
+      },
+    };
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch (error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-      global: {
-        headers: {
-          userapikey: bearerToken,
-        },
-      },
-    }
+    createServerClientOptions
   );
 };

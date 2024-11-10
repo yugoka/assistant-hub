@@ -26,7 +26,7 @@ export default function ThreadList({ query }: Props) {
     error,
     refetch,
   } = useQuery<Thread[], Error>(["get-thread-list", user?.id], async () => {
-    const res = await fetch(`/api/threads?user_id=${user?.id || ""}`);
+    const res = await fetch(`/api/threads`);
     const data = await res.json();
     return data as Thread[];
   });

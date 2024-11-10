@@ -40,19 +40,6 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
 
     const threadID = url.searchParams.get("thread_id");
-    const userID = url.searchParams.get("user_id");
-
-    if (!threadID && !userID) {
-      return new Response(
-        JSON.stringify({ error: "Neither thread_id nor user_id specified" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
 
     if (threadID) {
       const result = await getThreadByID({
@@ -61,8 +48,9 @@ export async function GET(req: Request) {
 
       const res = NextResponse.json(result, { status: 200 });
       return res;
-    } else if (userID) {
-      const result = await getThreads({ userId: userID });
+    } else {
+      // ログイン中ユーザーのみ取得される
+      const result = await getThreads();
       const res = NextResponse.json(result, { status: 200 });
       return res;
     }
