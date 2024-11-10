@@ -5,6 +5,7 @@ import {
   updateThread,
 } from "@/services/threads";
 import { NextResponse } from "next/server";
+export const runtime = "edge";
 
 // ==============
 // スレッド取得 (by id)

@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 // ==============
 // ツール検索
 // ==============
+export const runtime = "edge";
+
 export async function POST(req: Request) {
   try {
     const supabase = createClient();

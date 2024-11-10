@@ -40,6 +40,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
 
     const threadID = url.searchParams.get("thread_id");
+    const userID = url.searchParams.get("user_id");
 
     if (threadID) {
       const result = await getThreadByID({
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
       return res;
     } else {
       // ログイン中ユーザーのみ取得される
-      const result = await getThreads();
+      const result = await getThreads({ userId: userID || undefined });
       const res = NextResponse.json(result, { status: 200 });
       return res;
     }
