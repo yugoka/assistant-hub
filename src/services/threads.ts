@@ -41,7 +41,7 @@ export const getThreads = async ({
   userId,
   page,
   pageSize = 10,
-}: GetThreadsOptions): Promise<Thread[]> => {
+}: GetThreadsOptions = {}): Promise<Thread[]> => {
   const supabase = createClient();
 
   let query = supabase
