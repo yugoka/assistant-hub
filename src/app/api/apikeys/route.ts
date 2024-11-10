@@ -43,24 +43,14 @@ export async function GET(req: Request) {
       const result = await getApikeyByID({ id: Number(apikeyID) });
       const res = NextResponse.json(result, { status: 200 });
       return res;
-    } else if (userID) {
+    } else {
       const result = await getApikeys({
-        userId: userID,
+        userId: userID || undefined,
         page: page ? Number(page) : undefined,
         pageSize: pageSize ? Number(pageSize) : undefined,
       });
       const res = NextResponse.json(result, { status: 200 });
       return res;
-    } else {
-      return new Response(
-        JSON.stringify({ error: "Neither apikey_id nor user_id specified" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
     }
   } catch (error) {
     console.error("Error handling request:", error);
