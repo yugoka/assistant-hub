@@ -1,44 +1,41 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import {
+  CookieMethodsServer,
+  createServerClient,
+  type CookieOptions,
+} from "@supabase/ssr";
+import { SupabaseClientOptions } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 
 export const createClient = () => {
   const cookieStore = cookies();
   const headersStore = headers();
 
-  const createServerClientOptions = {
+  const createServerClientOptions: SupabaseClientOptions<"public"> & {
+    cookies: CookieMethodsServer;
+  } = {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll().map(({ name, value }) => ({ name, value }));
       },
-      set(name: string, value: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value, ...options });
-        } catch (error) {
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: "", ...options });
-        } catch (error) {
-          // The `delete` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach((cookie) => {
+          cookieStore.set(cookie);
+        });
       },
     },
+
     global: {
       headers: {},
     },
   };
 
   // 外部API用に作成されたjwt
-  const authToken = headersStore.get("authorization");
+  const authToken = headersStore.get("Authorization");
   if (authToken) {
-    createServerClientOptions.global.headers = {
-      Authorization: authToken,
+    createServerClientOptions.global = {
+      headers: {
+        Authorization: authToken,
+      },
     };
   }
 
