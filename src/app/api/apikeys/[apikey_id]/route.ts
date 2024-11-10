@@ -5,6 +5,7 @@ import {
   UpdateApikeyInput,
 } from "@/services/apikeys";
 import { NextResponse } from "next/server";
+export const runtime = "edge";
 
 // ==============
 // APIキー取得 (by id)
