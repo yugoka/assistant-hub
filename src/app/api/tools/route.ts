@@ -24,6 +24,20 @@ export async function POST(req: Request) {
       instruction_examples: reqBody.instruction_examples,
     };
 
+    if (!reqBody.instruction_examples?.length) {
+      return new Response(
+        JSON.stringify({
+          error: "At least one instruction example is required",
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     const result = await createTool(params);
     const res = NextResponse.json(result, { status: 200 });
     return res;
