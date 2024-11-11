@@ -8,105 +8,139 @@ import { SignJWT } from "jose";
 
 export const middleware = async (request: NextRequest) => {
   try {
-    // ヘッダーをクローン
-    const requestHeaders = new Headers(request.headers);
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const jwtSecret = process.env.SUPABASE_JWT_SECRET!;
-
-    // サービスロールキーを使用してSupabaseクライアントを作成
-    const supabaseAdmin = createServerClient(supabaseUrl, supabaseServiceKey, {
-      cookies: {
-        getAll() {
-          return parseCookieHeader(request.headers.get("Cookie") ?? "");
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            requestHeaders.append(
-              "Set-Cookie",
-              serializeCookieHeader(name, value, options)
-            )
-          );
-        },
-      },
-    });
-
-    // JWTが既に存在するかチェック
     const authHeader = request.headers.get("Authorization");
     const hasJWT =
       request.cookies.get("sb-access-token") ||
       (authHeader && authHeader.startsWith("Bearer "));
 
-    if (!hasJWT) {
-      // サービスAPIキーをヘッダーから取得
-      const serviceApiKey = request.headers.get("x-service-api-key");
-      if (serviceApiKey) {
-        // authenticate_api_key関数を呼び出してユーザーIDを取得
-        const { data: userId, error } = await supabaseAdmin.rpc(
-          "authenticate_api_key",
-          {
-            api_key: serviceApiKey,
-          }
+    if (hasJWT) {
+      return await handleExistingJWT(request);
+    } else {
+      return await handleServiceAPIKey(request);
+    }
+  } catch (e) {
+    console.error("ミドルウェアでエラーが発生しました:", e);
+    return NextResponse.next({ request });
+  }
+};
+
+const handleExistingJWT = async (request: NextRequest) => {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
         );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
-        if (error || !userId) {
-          // 認証失敗
-          return new NextResponse("Invalid API Key", { status: 401 });
-        }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-        // JWTペイロードを作成
-        const payload = {
-          sub: userId,
-          aud: "authenticated",
-          role: "authenticated",
-        };
+  // ユーザーが見つからない場合、ログインページにリダイレクト
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith("/login") &&
+    !request.nextUrl.pathname.startsWith("/auth")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
-        // JWTを生成
-        const token = await new SignJWT(payload)
-          .setExpirationTime("1h")
-          .setProtectedHeader({ alg: "HS256" })
-          .sign(new TextEncoder().encode(jwtSecret));
+  return supabaseResponse;
+};
 
-        // ヘッダーの更新
-        requestHeaders.set("Authorization", `Bearer ${token}`);
+const handleServiceAPIKey = async (request: NextRequest) => {
+  const requestHeaders = new Headers(request.headers);
 
-        // 更新したヘッダーをレスポンスに含める
-        const response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const jwtSecret = process.env.SUPABASE_JWT_SECRET!;
 
-        // クッキーにJWTを設定（必要に応じて）
-        response.cookies.set("sb-access-token", token, {
-          httpOnly: true,
-          sameSite: "lax",
-          secure: process.env.NODE_ENV === "production",
-        });
+  const supabaseAdmin = createServerClient(supabaseUrl, supabaseServiceKey, {
+    cookies: {
+      getAll() {
+        return parseCookieHeader(request.headers.get("Cookie") ?? "");
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          requestHeaders.append(
+            "Set-Cookie",
+            serializeCookieHeader(name, value, options)
+          )
+        );
+      },
+    },
+  });
 
-        // リクエストを続行
-        return response;
-      }
+  const serviceApiKey = request.headers.get("x-service-api-key");
+  if (serviceApiKey) {
+    const { data: userId, error } = await supabaseAdmin.rpc(
+      "authenticate_api_key",
+      { api_key: serviceApiKey }
+    );
+
+    if (error || !userId) {
+      return new NextResponse("Invalid API Key", { status: 401 });
     }
 
-    // JWTが既に存在する場合、またはサービスAPIキーがない場合は通常の処理を続行
-    return NextResponse.next();
-  } catch (e) {
-    // エラーハンドリング
-    console.error("Error in middleware:", e);
-    return NextResponse.next();
+    const payload = {
+      sub: userId,
+      aud: "authenticated",
+      role: "authenticated",
+    };
+
+    const token = await new SignJWT(payload)
+      .setExpirationTime("1h")
+      .setProtectedHeader({ alg: "HS256" })
+      .sign(new TextEncoder().encode(jwtSecret));
+
+    // ヘッダーを新しいJWTで更新
+    requestHeaders.set("Authorization", `Bearer ${token}`);
+
+    const response = NextResponse.next({
+      request: {
+        ...request,
+        headers: requestHeaders,
+      },
+    });
+
+    response.cookies.set("sb-access-token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return response;
   }
+
+  // サービスAPIキーがない場合、そのまま続行
+  return NextResponse.next({ request });
 };
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
+     * 除外するパス:
+     * - _next/static（静的ファイル）
+     * - _next/image（画像最適化ファイル）
+     * - favicon.ico
+     * - 画像ファイル（.svg, .png, .jpg, .jpeg, .gif, .webp）
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
