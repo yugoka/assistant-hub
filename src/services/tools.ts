@@ -154,14 +154,14 @@ export const getToolByID = async ({
   return data || null;
 };
 
-interface ToolSearchBaseOptions {
+export interface ToolSearchBaseOptions {
   similarityThreshold?: number;
   minTools?: number;
   maxTools?: number;
 }
 
 // ==============
-// embeddingによる類似ツール取得
+// embeddingによるツール取得
 // ==============
 export interface GetToolsByEmbeddingOptions extends ToolSearchBaseOptions {
   embedding: number[];
@@ -215,18 +215,20 @@ export const getToolsByEmbedding = async ({
 // ==============
 export interface GetToolsByPromptOptions extends ToolSearchBaseOptions {
   query: string;
+  trimQuery?: boolean;
 }
 export const getToolsByPrompt = async ({
   query,
   similarityThreshold = 0.25,
   minTools = 0,
   maxTools = 5,
+  trimQuery = true,
 }: GetToolsByPromptOptions): Promise<ToolWithSimilarity[]> => {
   if (!query) {
     throw new Error("Prompt is not defined");
   }
 
-  const embedding = await getEmbedding(query);
+  const embedding = await getEmbedding(query, { trimQuery });
   return await getToolsByEmbedding({
     similarityThreshold,
     minTools,

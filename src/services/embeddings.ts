@@ -7,6 +7,7 @@ import { stringfyMessagesForLM } from "@/utils/message";
 export type GetEmbeddingOptions = {
   model?: EmbeddingCreateParams["model"];
   dimensions?: number;
+  trimQuery?: boolean;
 };
 
 // ==============
@@ -16,10 +17,13 @@ export const getEmbedding = async (
   text: string,
   options?: GetEmbeddingOptions
 ): Promise<number[]> => {
-  const trimmedText = await trimTextByMaxTokens(
-    text,
-    parseInt(process.env.EMBEDDINGS_MAX_TOKENS || "") || 5160
-  );
+  let trimmedText = text;
+  if (options?.trimQuery) {
+    trimmedText = await trimTextByMaxTokens(
+      text,
+      parseInt(process.env.EMBEDDINGS_MAX_TOKENS || "") || 5160
+    );
+  }
 
   const model =
     options?.model ||
@@ -32,12 +36,14 @@ export const getEmbedding = async (
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+  console.time("emb");
   const result = await openai.embeddings.create({
     model,
     input: trimmedText,
     encoding_format: "base64",
     dimensions,
   });
+  console.timeEnd("emb");
 
   const embedding = base64ToFloat32ArrayNode(`${result.data[0].embedding}`);
   return embedding;
