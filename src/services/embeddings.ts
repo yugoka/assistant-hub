@@ -36,14 +36,12 @@ export const getEmbedding = async (
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  console.time("emb");
   const result = await openai.embeddings.create({
     model,
     input: trimmedText,
     encoding_format: "base64",
     dimensions,
   });
-  console.timeEnd("emb");
 
   const embedding = base64ToFloat32ArrayNode(`${result.data[0].embedding}`);
   return embedding;
