@@ -129,14 +129,8 @@ const handleServiceAPIKey = async (request: NextRequest) => {
     return response;
   }
 
-  // サービスAPIキーがない場合エラー
-  return NextResponse.json(
-    {
-      error:
-        "API key is missing. Please set the API key in the header x-service-api-key.",
-    },
-    { status: 401 }
-  );
+  // サービスAPIキーがない場合、そのまま続行
+  return NextResponse.next({ request });
 };
 
 export const config = {
