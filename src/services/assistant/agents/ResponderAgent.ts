@@ -53,6 +53,7 @@ export default class ResponderAgent {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     this.threadID = threadID;
     this.inputMessages = messages;
+    console.log(messages);
     this.currentMessages = [];
     this.maxToolCallSteps = maxSteps;
     this.save = save;
