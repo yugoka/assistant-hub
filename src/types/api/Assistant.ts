@@ -8,6 +8,7 @@ export type AssistantAPIParam = {
   save?: boolean;
   maxSteps?: number;
   model?: string;
+  stream?: boolean;
 };
 
 export type ResponderAgentParam = AssistantAPIParam & {
