@@ -140,6 +140,10 @@ export default class ResponderAgent {
         0
       )} ms`
     );
+
+    if (!result) {
+      throw new Error("Could not get thread");
+    }
   }
 
   private async initMessages() {
