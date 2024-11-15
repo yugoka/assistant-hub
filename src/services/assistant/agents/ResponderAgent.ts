@@ -382,7 +382,10 @@ export default class ResponderAgent {
 
     try {
       for await (const message of newMessages) {
-        const newMessage = message;
+        const newMessage: Message = {
+          ...message,
+          thread_id: message.thread_id || this.threadID,
+        };
 
         // システムメッセージは保存しない
         if (newMessage.role === "system") continue;
