@@ -388,7 +388,9 @@ export default class ResponderAgent {
       for await (const message of newMessages) {
         const newMessage: Message = {
           ...message,
+          // パラメータが足りなければ追加
           thread_id: message.thread_id || this.threadID,
+          id: uuidv4(),
         };
 
         // システムメッセージは保存しない
