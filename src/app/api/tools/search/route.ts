@@ -1,8 +1,10 @@
+import { convertRegisteredToolsToOpenAITools } from "@/services/schema/openapiToTools";
 import {
   getToolsByEmbedding,
   getToolsByPrompt,
   ToolSearchBaseOptions,
 } from "@/services/tools";
+import { Tool } from "@/types/Tool";
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -16,6 +18,7 @@ export interface GetToolsByQueryOrEmbeddingOptions
   embedding?: number[];
   query?: string;
   trimQuery?: boolean;
+  openai_tools_mode?: boolean;
 }
 export async function POST(req: Request) {
   try {
@@ -55,7 +58,11 @@ export async function POST(req: Request) {
         minTools: params.minTools,
         maxTools: params.maxTools,
       });
-      return NextResponse.json(result, { status: 200 });
+      const finalResult = await finalizeResult(
+        result,
+        reqBody.openai_tools_mode
+      );
+      return NextResponse.json(finalResult, { status: 200 });
     } else if (params.query) {
       //クエリによる検索
       const result = await getToolsByPrompt({
@@ -65,7 +72,11 @@ export async function POST(req: Request) {
         maxTools: params.maxTools,
         trimQuery: params.trimQuery,
       });
-      return NextResponse.json(result, { status: 200 });
+      const finalResult = await finalizeResult(
+        result,
+        reqBody.openai_tools_mode
+      );
+      return NextResponse.json(finalResult, { status: 200 });
     } else {
       return new Response(
         JSON.stringify({
@@ -90,3 +101,21 @@ export async function POST(req: Request) {
     });
   }
 }
+
+// 条件に応じてresultにOpenAIツールを付加する
+const finalizeResult = async (tools: Tool[], openai_tools_mode: boolean) => {
+  if (!openai_tools_mode) {
+    return tools;
+  } else {
+    const result = [];
+    for (const tool of tools) {
+      const openaiTools = await convertRegisteredToolsToOpenAITools(tool);
+      const openaiToolsWithoutExecutor = openaiTools.map((tool) => {
+        const { execute, ...rest } = tool;
+        return rest;
+      });
+      result.push(...openaiToolsWithoutExecutor);
+    }
+    return result;
+  }
+};
