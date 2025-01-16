@@ -390,7 +390,7 @@ export default class ResponderAgent {
           ...message,
           // パラメータが足りなければ追加
           thread_id: message.thread_id || this.threadID,
-          id: uuidv4(),
+          id: message.id || uuidv4(),
         };
 
         // システムメッセージは保存しない
