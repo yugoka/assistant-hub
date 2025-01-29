@@ -9,16 +9,20 @@ import {
 } from "../assistant/toolExecution/toolExecutor";
 const resolver = new Resolver();
 
+// TODO: 後でtypesに移す
 export type ExecutorFunction = (
   argsString: string,
   customHeadersString?: string
 ) => Promise<any>;
 
-export type OpenAIToolWithExecutor = ChatCompletionTool & {
+export type OpenAIToolWithoutExecutor = ChatCompletionTool & {
   path: string;
   method: string;
   operationId?: string;
   baseTool: Tool;
+};
+
+export type OpenAIToolWithExecutor = OpenAIToolWithoutExecutor & {
   execute: ExecutorFunction;
 };
 

@@ -1,5 +1,6 @@
 // 参考: https://github.com/cameronking4/openai-realtime-api-nextjs
 "use client";
+import { OpenAIToolWithoutExecutor } from "@/services/schema/openapiToTools";
 
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -14,18 +15,12 @@ export interface Conversation {
   status?: "speaking" | "processing" | "final";
 }
 
-export interface Tool {
-  name: string;
-  description: string;
-  parameters?: Record<string, any>;
-}
-
 /**
  * Hook のオプション
  */
 interface UseWebRTCAudioSessionOptions {
   voice?: string; // モデルに与える音声種別, 例: "en-US-Standard-B"
-  tools?: Tool[]; // AI が呼び出せる function の一覧
+  tools?: OpenAIToolWithoutExecutor[]; // AI が呼び出せる function の一覧
   initialSystemMessage?: string; // セッション開始時に送る初期メッセージ(任意)
 }
 
@@ -35,7 +30,7 @@ interface UseWebRTCAudioSessionOptions {
 interface UseWebRTCAudioSessionReturn {
   status: string;
   isSessionActive: boolean;
-  audioIndicatorRef: React.RefObject<HTMLDivElement | null>;
+  audioIndicatorRef: React.RefObject<HTMLDivElement>;
   startSession: () => Promise<void>;
   stopSession: () => void;
   handleStartStopClick: () => void;
@@ -99,16 +94,16 @@ export default function useWebRTCAudioSession(
   useEffect(() => {
     tools.forEach((tool) => {
       const fn = async (args: any) => {
-        console.log(`Tool called: ${tool.name} with args:`, args);
+        console.log(`Tool called: ${tool.function.name} with args:`, args);
         // ここで実際の処理を行う(例: 外部APIへリクエスト)
         // 今回はダミーでレスポンスを返す
         return {
           success: true,
-          toolName: tool.name,
+          toolName: tool.function.name,
           echoArgs: args,
         };
       };
-      registerFunction(tool.name, fn);
+      registerFunction(tool.function.name, fn);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tools]);
@@ -122,7 +117,7 @@ export default function useWebRTCAudioSession(
       type: "session.update",
       session: {
         modalities: ["text", "audio"],
-        tools,
+        // tools,
         input_audio_transcription: {
           model: "whisper-1",
         },
