@@ -1,4 +1,7 @@
-import { convertRegisteredToolsToOpenAITools } from "@/services/schema/openapiToTools";
+import {
+  convertRegisteredToolsToOpenAITools,
+  OpenAIToolWithoutExecutor,
+} from "@/services/schema/openapiToTools";
 import {
   getToolsByEmbedding,
   getToolsByPrompt,
@@ -102,20 +105,27 @@ export async function POST(req: Request) {
   }
 }
 
-// 条件に応じてresultにOpenAIツールを付加する
 const finalizeResult = async (tools: Tool[], openai_tools_mode: boolean) => {
   if (!openai_tools_mode) {
     return tools;
   } else {
-    const result = [];
-    for (const tool of tools) {
-      const openaiTools = await convertRegisteredToolsToOpenAITools(tool);
-      const openaiToolsWithoutExecutor = openaiTools.map((tool) => {
-        const { execute, ...rest } = tool;
-        return rest;
-      });
-      result.push(...openaiToolsWithoutExecutor);
-    }
-    return result;
+    return await addOpenAIToolsDefinition(tools);
   }
+};
+
+// 条件に応じてresultにOpenAIツールを付加する
+// TODO: 一連の流れをservicesに分離
+export const addOpenAIToolsDefinition = async (
+  tools: Tool[]
+): Promise<OpenAIToolWithoutExecutor[]> => {
+  const result = [];
+  for (const tool of tools) {
+    const openaiTools = await convertRegisteredToolsToOpenAITools(tool);
+    const openaiToolsWithoutExecutor = openaiTools.map((tool) => {
+      const { execute, ...rest } = tool;
+      return rest;
+    });
+    result.push(...openaiToolsWithoutExecutor);
+  }
+  return result;
 };
