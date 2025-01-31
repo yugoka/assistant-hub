@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       return new Response(
         JSON.stringify({
           error:
-            "Bad Request: Neither prompt nor embedding are set. Please set either one.",
+            "Bad Request: Neither query nor embedding are set. Please set either one.",
         }),
         {
           status: 400,

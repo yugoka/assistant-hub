@@ -29,7 +29,15 @@ export default function RealtimeChat() {
   useEffect(() => {
     async function fetchTools() {
       try {
-        const res = await fetch("/api/external-tools");
+        const res = await fetch("/api/tools/search", {
+          method: "POST",
+          body: JSON.stringify({
+            query: "test",
+            minTools: 5,
+            maxTools: 5,
+            openai_tools_mode: true,
+          }),
+        });
         const data = await res.json();
         setTools(data);
       } catch (error) {
@@ -88,7 +96,7 @@ export default function RealtimeChat() {
       <main className="flex-1 p-6 overflow-hidden flex flex-col">
         <Card className="flex-1 overflow-hidden flex flex-col">
           <CardHeader>
-            <CardTitle>Realtime Chat Demo</CardTitle>
+            <CardTitle>Realtime Chat(WIP)</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-4">

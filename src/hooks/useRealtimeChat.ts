@@ -1,11 +1,10 @@
-// 参考: https://github.com/cameronking4/openai-realtime-api-nextjs
 "use client";
 import { OpenAIToolWithoutExecutor } from "@/services/schema/openapiToTools";
-
+import { executeTool } from "@/utils/tools";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-// 会話メッセージの型例 (必要に応じて調整)
+// 会話メッセージの型例
 export interface Conversation {
   id: string;
   role: string;
@@ -15,18 +14,12 @@ export interface Conversation {
   status?: "speaking" | "processing" | "final";
 }
 
-/**
- * Hook のオプション
- */
 interface UseWebRTCAudioSessionOptions {
-  voice?: string; // モデルに与える音声種別, 例: "en-US-Standard-B"
+  voice?: string;
   tools?: OpenAIToolWithoutExecutor[]; // AI が呼び出せる function の一覧
-  initialSystemMessage?: string; // セッション開始時に送る初期メッセージ(任意)
+  initialSystemMessage?: string; // セッション開始時に送る初期メッセージ
 }
 
-/**
- * Hook から返すオブジェクト
- */
 interface UseWebRTCAudioSessionReturn {
   status: string;
   isSessionActive: boolean;
@@ -35,19 +28,16 @@ interface UseWebRTCAudioSessionReturn {
   stopSession: () => void;
   handleStartStopClick: () => void;
   registerFunction: (name: string, fn: Function) => void;
-  msgs: any[]; // デバッグ用: APIから受け取る生メッセージ等を格納
-  currentVolume: number; // アシスタント音声(受信)の音量計測用
-  conversation: Conversation[]; // 会話履歴 (ユーザ発話, アシスタント発話など)
+  msgs: any[];
+  currentVolume: number;
+  conversation: Conversation[];
   sendTextMessage: (text: string) => void;
 }
 
-/**
- * WebRTC + OpenAI Realtime API を使うためのカスタムフック
- */
 export default function useWebRTCAudioSession(
   options?: UseWebRTCAudioSessionOptions
 ): UseWebRTCAudioSessionReturn {
-  const voice = options?.voice ?? "en-US-Standard-B";
+  const voice = options?.voice ?? "sage";
   const tools = options?.tools ?? [];
   const initialSystemMessage = options?.initialSystemMessage ?? "";
 
@@ -78,30 +68,24 @@ export default function useWebRTCAudioSession(
   const analyserRef = useRef<AnalyserNode | null>(null);
   const volumeIntervalRef = useRef<number | null>(null);
 
-  // ユーザ発話(音声)の暫定ID
+  // ユーザ音声(暫定メッセージ)用
   const ephemeralUserMessageIdRef = useRef<string | null>(null);
 
   /**
-   * AIに呼び出される関数を登録する (Tools)
+   * AIに呼び出される関数(ツール)を登録する
    */
   function registerFunction(name: string, fn: Function) {
     functionRegistry.current[name] = fn;
   }
 
   /**
-   * もし props で与えられた tools があれば、自動的に register する
+   * もしpropsで与えられたtoolsがあれば、自動的にregisterFunctionする (ダミー実装)
    */
   useEffect(() => {
     tools.forEach((tool) => {
       const fn = async (args: any) => {
-        console.log(`Tool called: ${tool.function.name} with args:`, args);
-        // ここで実際の処理を行う(例: 外部APIへリクエスト)
-        // 今回はダミーでレスポンスを返す
-        return {
-          success: true,
-          toolName: tool.function.name,
-          echoArgs: args,
-        };
+        console.log(`【Tool呼び出し】${tool.function.name} with args:`, args);
+        return await executeTool(tool, args);
       };
       registerFunction(tool.function.name, fn);
     });
@@ -109,23 +93,39 @@ export default function useWebRTCAudioSession(
   }, [tools]);
 
   /**
-   * データチャネルが open したら、セッション情報を送る
+   * データチャネルが open したら、Realtime API に初期設定を送信
    */
   function configureDataChannel(dataChannel: RTCDataChannel) {
-    // 1) "session.update" イベント送信: モダリティ(音声/テキスト)や利用ツール一覧などを通知
+    // 1) "session.update" イベント送信: モダリティ, ツール一覧など
+    console.log(
+      tools.map((t) => ({
+        type: "function",
+        name: t.function.name,
+        description: t.function.description || "No description",
+        parameters: t.function.parameters || {},
+      }))
+    );
     const sessionUpdate = {
       type: "session.update",
       session: {
         modalities: ["text", "audio"],
-        // tools,
+        voice,
+        tool_choice: "auto",
+        tools: tools.map((t) => ({
+          type: "function",
+          name: t.function.name,
+          description: t.function.description || "No description",
+          parameters: t.function.parameters || {},
+        })),
         input_audio_transcription: {
           model: "whisper-1",
         },
+        // ここで必要に応じて instructions や turn_detection を指定可能
       },
     };
     dataChannel.send(JSON.stringify(sessionUpdate));
 
-    // 2) 初期メッセージがあれば送る (例: システムメッセージ)
+    // 2) 初期メッセージがあれば会話に追加 (system)
     if (initialSystemMessage) {
       const systemMsg = {
         type: "conversation.item.create",
@@ -145,7 +145,7 @@ export default function useWebRTCAudioSession(
   }
 
   /**
-   * ユーザ音声の暫定メッセージIDを取得/作成
+   * ユーザの音声用の暫定メッセージIDを取得 or 作成
    */
   function getOrCreateEphemeralUserId(): string {
     if (!ephemeralUserMessageIdRef.current) {
@@ -164,23 +164,18 @@ export default function useWebRTCAudioSession(
   }
 
   /**
-   * ユーザ音声の暫定メッセージをアップデート
+   * 暫定メッセージの更新
    */
   function updateEphemeralUserMessage(partial: Partial<Conversation>) {
     const ephemeralId = ephemeralUserMessageIdRef.current;
     if (!ephemeralId) return;
     setConversation((prev) =>
-      prev.map((msg) => {
-        if (msg.id === ephemeralId) {
-          return { ...msg, ...partial };
-        }
-        return msg;
-      })
+      prev.map((msg) => (msg.id === ephemeralId ? { ...msg, ...partial } : msg))
     );
   }
 
   /**
-   * ユーザ音声の暫定メッセージIDをクリア
+   * 暫定メッセージIDをクリア
    */
   function clearEphemeralUserMessage() {
     ephemeralUserMessageIdRef.current = null;
@@ -194,26 +189,24 @@ export default function useWebRTCAudioSession(
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
-        // 音声入力開始
-        case "input_audio_buffer.speech_started": {
+        // --- ユーザ音声の検知系 ---
+        case "input_audio_buffer.speech_started":
           getOrCreateEphemeralUserId();
           updateEphemeralUserMessage({ status: "speaking" });
           break;
-        }
-        // 音声停止
-        case "input_audio_buffer.speech_stopped": {
+
+        case "input_audio_buffer.speech_stopped":
           updateEphemeralUserMessage({ status: "speaking" });
           break;
-        }
-        // バッファがコミット -> 解析中
-        case "input_audio_buffer.committed": {
+
+        case "input_audio_buffer.committed":
           updateEphemeralUserMessage({
             text: "Processing speech...",
             status: "processing",
           });
           break;
-        }
-        // 部分的な文字起こし
+
+        // --- ユーザ音声の文字起こし ---
         case "conversation.item.input_audio_transcription": {
           const partialText = msg.transcript ?? "User is speaking...";
           updateEphemeralUserMessage({
@@ -223,18 +216,21 @@ export default function useWebRTCAudioSession(
           });
           break;
         }
-        // 最終文字起こし
         case "conversation.item.input_audio_transcription.completed": {
+          const finalText = msg.transcript || "";
           updateEphemeralUserMessage({
-            text: msg.transcript || "",
+            text: finalText,
             isFinal: true,
             status: "final",
           });
           clearEphemeralUserMessage();
           break;
         }
-        // アシスタントのストリーミングテキスト(部分)
+
+        // --- アシスタントのストリーミングテキスト(部分) ---
+        case "response.text.delta":
         case "response.audio_transcript.delta": {
+          // アシスタントの部分的な文字列を conversation に追記
           const newMessage: Conversation = {
             id: uuidv4(),
             role: "assistant",
@@ -244,8 +240,8 @@ export default function useWebRTCAudioSession(
           };
           setConversation((prev) => {
             const last = prev[prev.length - 1];
-            // 直近のアシスタントメッセージに追記するかどうか
             if (last && last.role === "assistant" && !last.isFinal) {
+              // 直近メッセージに追記
               const updated = [...prev];
               updated[updated.length - 1] = {
                 ...last,
@@ -258,7 +254,9 @@ export default function useWebRTCAudioSession(
           });
           break;
         }
-        // アシスタントのテキスト出力(最終)
+
+        // --- アシスタントのテキスト出力(最終) ---
+        case "response.text.done":
         case "response.audio_transcript.done": {
           setConversation((prev) => {
             if (prev.length === 0) return prev;
@@ -268,13 +266,30 @@ export default function useWebRTCAudioSession(
           });
           break;
         }
-        // function call
+
+        // --- 関数呼び出し引数(途中) ---
+        case "response.function_call_arguments.delta": {
+          // 部分的な引数。コンソールに出すだけで、会話には追加しない。
+          // console.log("【function_call_arguments.delta】", msg.delta);
+          break;
+        }
+
+        // --- 関数呼び出し引数(最終) ---
         case "response.function_call_arguments.done": {
+          console.log("【function_call_arguments.done】", msg);
+
+          // 該当関数を取得
           const fn = functionRegistry.current[msg.name];
           if (fn) {
+            // 引数をJSON.parse
             const args = JSON.parse(msg.arguments || "{}");
+            console.log("実行する関数:", msg.name, "引数:", args);
+
+            // 関数実行
             const result = await fn(args);
-            // AIに実行結果を返す
+            console.log("関数の実行結果:", result);
+
+            // 実行結果をAIに返す: function_call_output
             const response = {
               type: "conversation.item.create",
               item: {
@@ -284,21 +299,28 @@ export default function useWebRTCAudioSession(
               },
             };
             dataChannelRef.current?.send(JSON.stringify(response));
-            // 最後に response.create を送って完了を通知
+
+            // 次のAI回答を促す (response.create)
             const responseCreate = {
               type: "response.create",
+              response: {},
             };
             dataChannelRef.current?.send(JSON.stringify(responseCreate));
           }
           break;
         }
-        default: {
-          // Unhandled
+
+        // エラーメッセージなど
+        case "error":
+          console.error("【Server Error】", msg.error);
           break;
-        }
+
+        default:
+          // そのほかのイベントは適宜拡張
+          break;
       }
 
-      // デバッグ用に保存
+      // デバッグ用に全イベントを保存
       setMsgs((prevMsgs) => [...prevMsgs, msg]);
     } catch (error) {
       console.error("Error handling data channel message:", error);
@@ -327,7 +349,7 @@ export default function useWebRTCAudioSession(
   }
 
   /**
-   * マイク入力の音量可視化用 (CSSトグル)
+   * マイク入力の音量可視化 (CSSトグル)
    */
   function setupAudioVisualization(stream: MediaStream) {
     const audioContext = new AudioContext();
@@ -344,7 +366,6 @@ export default function useWebRTCAudioSession(
       analyzer.getByteFrequencyData(dataArray);
       const average = dataArray.reduce((a, b) => a + b) / bufferLength;
 
-      // 一定値を超えたらCSSクラス "active" を付与
       if (audioIndicatorRef.current) {
         audioIndicatorRef.current.classList.toggle("active", average > 30);
       }
@@ -356,7 +377,7 @@ export default function useWebRTCAudioSession(
   }
 
   /**
-   * アシスタント側(受信音声)の音量計測
+   * アシスタント音声(受信)の音量計測
    */
   function getVolume(): number {
     if (!analyserRef.current) return 0;
@@ -388,7 +409,7 @@ export default function useWebRTCAudioSession(
       const pc = new RTCPeerConnection();
       peerConnectionRef.current = pc;
 
-      // アシスタント音声を再生するための隠し <audio> 要素
+      // アシスタント音声を再生するための <audio> 要素
       const audioEl = document.createElement("audio");
       audioEl.autoplay = true;
 
@@ -479,12 +500,11 @@ export default function useWebRTCAudioSession(
     analyserRef.current = null;
 
     ephemeralUserMessageIdRef.current = null;
-
     setCurrentVolume(0);
     setIsSessionActive(false);
     setStatus("Session stopped");
 
-    // 会話履歴やデバッグログをリセット
+    // 会話履歴やデバッグログもリセット（必要に応じて）
     setMsgs([]);
     setConversation([]);
   }
@@ -501,7 +521,7 @@ export default function useWebRTCAudioSession(
   }
 
   /**
-   * ユーザがテキストでメッセージを送信
+   * ユーザがテキストメッセージを送信
    */
   function sendTextMessage(text: string) {
     if (
@@ -513,7 +533,7 @@ export default function useWebRTCAudioSession(
     }
 
     const messageId = uuidv4();
-    // 会話履歴に追加
+    // ローカルの会話履歴に追加
     const newMessage: Conversation = {
       id: messageId,
       role: "user",
@@ -524,7 +544,7 @@ export default function useWebRTCAudioSession(
     };
     setConversation((prev) => [...prev, newMessage]);
 
-    // DataChannel で送信
+    // DataChannel で送信 (conversation.item.create)
     const messagePayload = {
       type: "conversation.item.create",
       item: {
@@ -540,7 +560,7 @@ export default function useWebRTCAudioSession(
     };
     dataChannelRef.current.send(JSON.stringify(messagePayload));
 
-    // レスポンス生成開始を通知 (OpenAI Realtime API 仕様)
+    // レスポンス生成開始を通知 (response.create)
     const response = {
       type: "response.create",
     };
