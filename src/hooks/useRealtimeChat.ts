@@ -239,7 +239,6 @@ export default function useWebRTCAudioSession(
             content: msg.delta,
             created_at: new Date().toISOString(),
             isFinal: false,
-            tool_calls: [],
           };
           setConversation((prev) => {
             const last = prev[prev.length - 1];
