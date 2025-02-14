@@ -404,6 +404,9 @@ export default function useWebRTCAudioSession(
       audioStreamRef.current = stream;
       setupAudioVisualization(stream);
 
+      // 開始音を鳴らす
+      new Audio("/sounds/session-start.mp3").play().catch();
+
       setStatus("Fetching ephemeral token...");
       const ephemeralToken = await getEphemeralToken();
 
@@ -476,6 +479,9 @@ export default function useWebRTCAudioSession(
    * セッション終了
    */
   function stopSession() {
+    // 終了音を鳴らす
+    new Audio("/sounds/session-end.mp3").play().catch();
+
     if (dataChannelRef.current) {
       dataChannelRef.current.close();
       dataChannelRef.current = null;
