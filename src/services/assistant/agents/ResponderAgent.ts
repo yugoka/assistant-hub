@@ -193,7 +193,7 @@ export default class ResponderAgent {
 
       messagesToSave.push(newMessage);
 
-      if (!this.hasToolCall(newChunkObject)) {
+      if (!this.hasToolCall(newChunkObject) && newMessage) {
         this.currentMessages.push(newMessage);
         break;
       }
@@ -267,7 +267,11 @@ export default class ResponderAgent {
   }
 
   private hasToolCall(newChunkObject: ChatCompletionChunk): boolean {
-    return newChunkObject.choices[0].finish_reason === "tool_calls";
+    // 本来はfinish_reasonだけで判定できるはずだが、OpenAI側の問題でちょくちょくバグるのでtool_callsでも判定
+    return (
+      newChunkObject.choices[0].finish_reason === "tool_calls" ||
+      !!newChunkObject.choices[0].delta.tool_calls?.length
+    );
   }
 
   private async handleToolCalls(

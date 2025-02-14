@@ -1,4 +1,8 @@
-import { convertRegisteredToolsToOpenAITools } from "@/services/schema/openapiToTools";
+import { addOpenAIToolsDefinition } from "@/services/schema/openaiTools";
+import {
+  convertRegisteredToolsToOpenAITools,
+  OpenAIToolWithoutExecutor,
+} from "@/services/schema/openapiToTools";
 import {
   getToolsByEmbedding,
   getToolsByPrompt,
@@ -81,7 +85,7 @@ export async function POST(req: Request) {
       return new Response(
         JSON.stringify({
           error:
-            "Bad Request: Neither prompt nor embedding are set. Please set either one.",
+            "Bad Request: Neither query nor embedding are set. Please set either one.",
         }),
         {
           status: 400,
@@ -102,20 +106,10 @@ export async function POST(req: Request) {
   }
 }
 
-// 条件に応じてresultにOpenAIツールを付加する
 const finalizeResult = async (tools: Tool[], openai_tools_mode: boolean) => {
   if (!openai_tools_mode) {
     return tools;
   } else {
-    const result = [];
-    for (const tool of tools) {
-      const openaiTools = await convertRegisteredToolsToOpenAITools(tool);
-      const openaiToolsWithoutExecutor = openaiTools.map((tool) => {
-        const { execute, ...rest } = tool;
-        return rest;
-      });
-      result.push(...openaiToolsWithoutExecutor);
-    }
-    return result;
+    return await addOpenAIToolsDefinition(tools);
   }
 };

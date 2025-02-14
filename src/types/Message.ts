@@ -41,7 +41,7 @@ export type AssistantMessage = ChatCompletionAssistantMessageParam & {
   id: string;
   created_at?: string;
   thread_id: string;
-  tool_calls: CustomToolCall[];
+  tool_calls?: CustomToolCall[];
 };
 
 export type ToolMessage = ChatCompletionToolMessageParam & {
