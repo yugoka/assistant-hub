@@ -34,6 +34,7 @@ export default function ChatLogToolCalls({
 
   const toolCallNames =
     message.role === "assistant" &&
+    message.tool_calls?.length &&
     message.tool_calls
       .filter((toolCall: CustomToolCall) => toolCall.baseToolName)
       .map((toolCall: CustomToolCall) => toolCall.baseToolName)
@@ -52,8 +53,7 @@ export default function ChatLogToolCalls({
               <AccordionTrigger className="flex justify-start">
                 <p className="mr-2 flex items-center text-xs font-mono text-gray-500 dark:text-gray-400">
                   <ToolIcon className="inline-block w-4 mr-2" />
-                  {`${message.tool_calls.length} Tools Called`}
-                  {toolCallNames && `: ${toolCallNames}`}{" "}
+                  {toolCallNames && `${toolCallNames}`}{" "}
                 </p>
               </AccordionTrigger>
               <AccordionContent>
