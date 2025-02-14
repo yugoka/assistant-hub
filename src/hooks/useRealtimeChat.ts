@@ -11,6 +11,14 @@ export type RealtimeConversation = Message & {
   status?: "speaking" | "processing" | "final";
 };
 
+export type RealtimeSessionStatus =
+  | "running"
+  | "stopped"
+  | "mic_access"
+  | "fetch_token"
+  | "establish_connection"
+  | "error";
+
 interface UseWebRTCAudioSessionOptions {
   voice?: string;
   tools?: OpenAIToolWithoutExecutor[]; // AI が呼び出せる function の一覧
@@ -18,7 +26,7 @@ interface UseWebRTCAudioSessionOptions {
 }
 
 interface UseWebRTCAudioSessionReturn {
-  status: string;
+  status: RealtimeSessionStatus;
   isSessionActive: boolean;
   audioIndicatorRef: React.RefObject<HTMLDivElement>;
   startSession: () => Promise<void>;
@@ -40,8 +48,8 @@ export default function useWebRTCAudioSession(
   const initialSystemMessage = options?.initialSystemMessage ?? "";
 
   // セッション状態管理
-  const [status, setStatus] = useState("");
-  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [status, setStatus] = useState<RealtimeSessionStatus>("stopped");
+  const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
 
   // ローカルマイク入力の管理
   const audioIndicatorRef = useRef<HTMLDivElement | null>(null);
@@ -399,7 +407,7 @@ export default function useWebRTCAudioSession(
    */
   async function startSession() {
     try {
-      setStatus("Requesting microphone access...");
+      setStatus("mic_access");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioStreamRef.current = stream;
       setupAudioVisualization(stream);
@@ -407,10 +415,10 @@ export default function useWebRTCAudioSession(
       // 開始音を鳴らす
       new Audio("/sounds/session-start.mp3").play().catch();
 
-      setStatus("Fetching ephemeral token...");
+      setStatus("fetch_token");
       const ephemeralToken = await getEphemeralToken();
 
-      setStatus("Establishing connection...");
+      setStatus("establish_connection");
       const pc = new RTCPeerConnection();
       peerConnectionRef.current = pc;
 
@@ -467,10 +475,10 @@ export default function useWebRTCAudioSession(
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
 
       setIsSessionActive(true);
-      setStatus("Session established successfully!");
+      setStatus("running");
     } catch (err) {
       console.error("startSession error:", err);
-      setStatus(`Error: ${String(err)}`);
+      setStatus("error");
       stopSession();
     }
   }
@@ -509,7 +517,7 @@ export default function useWebRTCAudioSession(
     ephemeralUserMessageIdRef.current = null;
     setCurrentVolume(0);
     setIsSessionActive(false);
-    setStatus("Session stopped");
+    setStatus("stopped");
 
     // 会話履歴やデバッグログもリセット（必要に応じて）
     setMsgs([]);

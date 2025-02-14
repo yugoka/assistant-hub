@@ -193,7 +193,6 @@ export default class ResponderAgent {
 
       messagesToSave.push(newMessage);
 
-      console.log(newChunkObject);
       if (!this.hasToolCall(newChunkObject) && newMessage) {
         this.currentMessages.push(newMessage);
         break;

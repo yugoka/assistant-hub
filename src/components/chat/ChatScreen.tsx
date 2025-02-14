@@ -56,7 +56,8 @@ export default function ChatScreen({ threadID }: Props) {
     initialSystemMessage: "あなたは有能なアシスタントです。",
   });
 
-  const isSessionInProgress = realtimeStatus !== "Session stopped";
+  const isSessionInProgress =
+    realtimeStatus !== "stopped" && realtimeStatus !== "error";
 
   useEffect(() => {
     async function fetchTools() {
