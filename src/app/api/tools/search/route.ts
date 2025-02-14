@@ -1,3 +1,4 @@
+import { addOpenAIToolsDefinition } from "@/services/schema/openaiTools";
 import {
   convertRegisteredToolsToOpenAITools,
   OpenAIToolWithoutExecutor,
@@ -111,21 +112,4 @@ const finalizeResult = async (tools: Tool[], openai_tools_mode: boolean) => {
   } else {
     return await addOpenAIToolsDefinition(tools);
   }
-};
-
-// 条件に応じてresultにOpenAIツールを付加する
-// TODO: 一連の流れをservicesに分離
-export const addOpenAIToolsDefinition = async (
-  tools: Tool[]
-): Promise<OpenAIToolWithoutExecutor[]> => {
-  const result = [];
-  for (const tool of tools) {
-    const openaiTools = await convertRegisteredToolsToOpenAITools(tool);
-    const openaiToolsWithoutExecutor = openaiTools.map((tool) => {
-      const { execute, ...rest } = tool;
-      return rest;
-    });
-    result.push(...openaiToolsWithoutExecutor);
-  }
-  return result;
 };
