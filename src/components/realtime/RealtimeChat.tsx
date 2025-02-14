@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, Send } from "lucide-react";
+import { parseMessageContent } from "@/utils/message";
 
 export default function RealtimeChat() {
   const [tools, setTools] = useState<OpenAIToolWithoutExecutor[]>([]);
@@ -20,7 +21,7 @@ export default function RealtimeChat() {
     conversation,
     sendTextMessage,
     currentVolume,
-  } = useWebRTCAudioSession({
+  } = useWebRTCAudioSession("", {
     voice: "alloy",
     tools,
     initialSystemMessage: "あなたは有能なアシスタントです。",
@@ -114,7 +115,7 @@ export default function RealtimeChat() {
                         : "bg-gray-200"
                     }`}
                   >
-                    <p>{msg.text}</p>
+                    <p>{parseMessageContent(msg.content)}</p>
                     {!msg.isFinal && (
                       <span className="text-xs italic">
                         {msg.role === "user" ? "(sending...)" : "(typing...)"}

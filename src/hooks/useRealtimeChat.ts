@@ -1,18 +1,15 @@
 "use client";
 import { OpenAIToolWithoutExecutor } from "@/services/schema/openapiToTools";
+import { Message } from "@/types/Message";
 import { executeTool } from "@/utils/tools";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 // 会話メッセージの型例
-export interface Conversation {
-  id: string;
-  role: string;
-  text: string;
-  timestamp: string;
+export type RealtimeConversation = Message & {
   isFinal: boolean;
   status?: "speaking" | "processing" | "final";
-}
+};
 
 interface UseWebRTCAudioSessionOptions {
   voice?: string;
@@ -30,11 +27,12 @@ interface UseWebRTCAudioSessionReturn {
   registerFunction: (name: string, fn: Function) => void;
   msgs: any[];
   currentVolume: number;
-  conversation: Conversation[];
+  conversation: RealtimeConversation[];
   sendTextMessage: (text: string) => void;
 }
 
 export default function useWebRTCAudioSession(
+  threadId: string,
   options?: UseWebRTCAudioSessionOptions
 ): UseWebRTCAudioSessionReturn {
   const voice = options?.voice ?? "sage";
@@ -58,7 +56,7 @@ export default function useWebRTCAudioSession(
   const [msgs, setMsgs] = useState<any[]>([]);
 
   // 会話履歴
-  const [conversation, setConversation] = useState<Conversation[]>([]);
+  const [conversation, setConversation] = useState<RealtimeConversation[]>([]);
 
   // function_call に応じて呼び出される関数を登録するレジストリ
   const functionRegistry = useRef<Record<string, Function>>({});
@@ -150,11 +148,12 @@ export default function useWebRTCAudioSession(
   function getOrCreateEphemeralUserId(): string {
     if (!ephemeralUserMessageIdRef.current) {
       ephemeralUserMessageIdRef.current = uuidv4();
-      const newMessage: Conversation = {
+      const newMessage: RealtimeConversation = {
         id: ephemeralUserMessageIdRef.current,
+        thread_id: threadId,
         role: "user",
-        text: "",
-        timestamp: new Date().toISOString(),
+        content: "",
+        created_at: new Date().toISOString(),
         isFinal: false,
         status: "speaking",
       };
@@ -166,9 +165,11 @@ export default function useWebRTCAudioSession(
   /**
    * 暫定メッセージの更新
    */
-  function updateEphemeralUserMessage(partial: Partial<Conversation>) {
+  function updateEphemeralUserMessage(partial: Partial<RealtimeConversation>) {
     const ephemeralId = ephemeralUserMessageIdRef.current;
     if (!ephemeralId) return;
+    // ここの解決方法わからんすぎる。。。 多分role毎に分かれている型が悪さしてる
+    // @ts-ignore
     setConversation((prev) =>
       prev.map((msg) => (msg.id === ephemeralId ? { ...msg, ...partial } : msg))
     );
@@ -201,7 +202,7 @@ export default function useWebRTCAudioSession(
 
         case "input_audio_buffer.committed":
           updateEphemeralUserMessage({
-            text: "Processing speech...",
+            content: "Processing speech...",
             status: "processing",
           });
           break;
@@ -210,7 +211,7 @@ export default function useWebRTCAudioSession(
         case "conversation.item.input_audio_transcription": {
           const partialText = msg.transcript ?? "User is speaking...";
           updateEphemeralUserMessage({
-            text: partialText,
+            content: partialText,
             status: "speaking",
             isFinal: false,
           });
@@ -219,7 +220,7 @@ export default function useWebRTCAudioSession(
         case "conversation.item.input_audio_transcription.completed": {
           const finalText = msg.transcript || "";
           updateEphemeralUserMessage({
-            text: finalText,
+            content: finalText,
             isFinal: true,
             status: "final",
           });
@@ -231,12 +232,14 @@ export default function useWebRTCAudioSession(
         case "response.text.delta":
         case "response.audio_transcript.delta": {
           // アシスタントの部分的な文字列を conversation に追記
-          const newMessage: Conversation = {
+          const newMessage: RealtimeConversation = {
             id: uuidv4(),
+            thread_id: threadId,
             role: "assistant",
-            text: msg.delta,
-            timestamp: new Date().toISOString(),
+            content: msg.delta,
+            created_at: new Date().toISOString(),
             isFinal: false,
+            tool_calls: [],
           };
           setConversation((prev) => {
             const last = prev[prev.length - 1];
@@ -245,7 +248,7 @@ export default function useWebRTCAudioSession(
               const updated = [...prev];
               updated[updated.length - 1] = {
                 ...last,
-                text: last.text + msg.delta,
+                content: last.content + msg.delta,
               };
               return updated;
             } else {
@@ -534,11 +537,12 @@ export default function useWebRTCAudioSession(
 
     const messageId = uuidv4();
     // ローカルの会話履歴に追加
-    const newMessage: Conversation = {
+    const newMessage: RealtimeConversation = {
       id: messageId,
+      thread_id: threadId,
       role: "user",
-      text,
-      timestamp: new Date().toISOString(),
+      content: text,
+      created_at: new Date().toISOString(),
       isFinal: true,
       status: "final",
     };
