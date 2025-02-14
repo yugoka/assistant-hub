@@ -479,10 +479,9 @@ export default function useWebRTCAudioSession(
    * セッション終了
    */
   function stopSession() {
-    // 終了音を鳴らす
-    new Audio("/sounds/session-end.mp3").play().catch();
-
     if (dataChannelRef.current) {
+      // 終了音を鳴らす
+      new Audio("/sounds/session-end.mp3").play().catch();
       dataChannelRef.current.close();
       dataChannelRef.current = null;
     }
