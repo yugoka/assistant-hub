@@ -23,6 +23,7 @@ interface UseWebRTCAudioSessionOptions {
   voice?: string;
   tools?: OpenAIToolWithoutExecutor[]; // AI が呼び出せる function の一覧
   initialSystemMessage?: string; // セッション開始時に送る初期メッセージ
+  model?: "tts-1" | "tts-1-hd";
 }
 
 interface UseWebRTCAudioSessionReturn {
@@ -44,6 +45,7 @@ export default function useWebRTCAudioSession(
   options?: UseWebRTCAudioSessionOptions
 ): UseWebRTCAudioSessionReturn {
   const voice = options?.voice ?? "sage";
+  const model = options?.model ?? "tts-1";
   const tools = options?.tools ?? [];
   const initialSystemMessage = options?.initialSystemMessage ?? "";
 
@@ -116,6 +118,7 @@ export default function useWebRTCAudioSession(
       session: {
         modalities: ["text", "audio"],
         voice,
+        model,
         tool_choice: "auto",
         tools: tools.map((t) => ({
           type: "function",
@@ -431,7 +434,7 @@ export default function useWebRTCAudioSession(
         audioEl.srcObject = event.streams[0];
 
         // 音量計測
-        const audioCtx = new (window.AudioContext || window.AudioContext)();
+        const audioCtx = new AudioContext();
         const src = audioCtx.createMediaStreamSource(event.streams[0]);
         const inboundAnalyzer = audioCtx.createAnalyser();
         inboundAnalyzer.fftSize = 256;
@@ -460,15 +463,18 @@ export default function useWebRTCAudioSession(
 
       // OpenAI Realtime API への接続
       const baseUrl = "https://api.openai.com/v1/realtime";
-      const model = "gpt-4o-realtime-preview-2024-12-17"; // Realtime対応モデル
-      const response = await fetch(`${baseUrl}?model=${model}&voice=${voice}`, {
-        method: "POST",
-        body: offer.sdp,
-        headers: {
-          Authorization: `Bearer ${ephemeralToken}`,
-          "Content-Type": "application/sdp",
-        },
-      });
+      const modelName = "gpt-4o-realtime-preview"; // Realtime対応モデル
+      const response = await fetch(
+        `${baseUrl}?model=${modelName}&voice=${voice}`,
+        {
+          method: "POST",
+          body: offer.sdp,
+          headers: {
+            Authorization: `Bearer ${ephemeralToken}`,
+            "Content-Type": "application/sdp",
+          },
+        }
+      );
 
       // SDP Answer
       const answerSdp = await response.text();
