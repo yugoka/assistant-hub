@@ -1,3 +1,4 @@
+import { addOpenAIToolsDefinition } from "@/services/schema/openaiTools";
 import {
   UpdateToolInput,
   deleteTool,
@@ -14,7 +15,15 @@ export const runtime = "edge";
 // ==============
 export async function GET(
   req: Request,
-  { params }: { params: { tool_id?: string; tool_name?: string } }
+  {
+    params,
+  }: {
+    params: {
+      tool_id?: string;
+      tool_name?: string;
+      openai_tools_mode?: boolean;
+    };
+  }
 ) {
   try {
     const toolID = params.tool_id;
@@ -59,6 +68,12 @@ export async function GET(
           },
         }
       );
+    }
+
+    // リクエストされているならOpenAI Tools化する
+    if (params.openai_tools_mode) {
+      const openAiTools = await addOpenAIToolsDefinition([result]);
+      result = openAiTools[0];
     }
 
     const res = NextResponse.json(result, { status: 200 });
