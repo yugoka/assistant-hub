@@ -2,6 +2,7 @@ import {
   UpdateToolInput,
   deleteTool,
   getToolByID,
+  getToolByName,
   updateTool,
 } from "@/services/tools";
 import { NextResponse } from "next/server";
@@ -13,14 +14,17 @@ export const runtime = "edge";
 // ==============
 export async function GET(
   req: Request,
-  { params }: { params: { tool_id: string } }
+  { params }: { params: { tool_id?: string; tool_name?: string } }
 ) {
   try {
     const toolID = params.tool_id;
+    const toolName = params.tool_name;
 
-    if (!toolID) {
+    if (!toolID && !toolName) {
       return new Response(
-        JSON.stringify({ error: "Bad Request: tool_id is required" }),
+        JSON.stringify({
+          error: "Bad Request: tool_id or tool_name is required",
+        }),
         {
           status: 400,
           headers: {
@@ -30,9 +34,17 @@ export async function GET(
       );
     }
 
-    const result = await getToolByID({
-      toolID,
-    });
+    let result = null;
+
+    if (toolID) {
+      result = await getToolByID({
+        toolID,
+      });
+    } else if (toolName) {
+      result = await getToolByName({
+        toolName,
+      });
+    }
 
     if (result === null) {
       return new Response(

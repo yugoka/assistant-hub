@@ -3,6 +3,22 @@ import { createClient } from "@/utils/supabase/server";
 import { getAndAverageEmbeddings, getEmbedding } from "./embeddings";
 import { PostgrestResponse } from "@supabase/supabase-js";
 
+// ツール取得時に返す情報(embeddingを除く)
+const GET_TOOL_RETURN_FIELD = `
+id,
+name,
+description,
+schema,
+created_at,
+user_id,
+execution_count,
+average_execution_time,
+credential,
+auth_type,
+success_count,
+instruction_examples
+`;
+
 // ==============
 // ツール作成
 // ==============
@@ -30,22 +46,7 @@ export const createTool = async (input: CreateToolInput): Promise<Tool> => {
   const { data, error } = await supabase
     .from("tools")
     .insert([processedInput])
-    .select(
-      `
-      id,
-      name,
-      description,
-      schema,
-      created_at,
-      user_id,
-      execution_count,
-      average_execution_time,
-      credential,
-      auth_type,
-      success_count,
-      instruction_examples
-    `
-    )
+    .select(GET_TOOL_RETURN_FIELD)
     .single();
 
   if (error) {
@@ -72,22 +73,7 @@ export const getTools = async ({
 
   let query = supabase
     .from("tools")
-    .select(
-      `
-      id,
-      name,
-      description,
-      schema,
-      created_at,
-      user_id,
-      execution_count,
-      average_execution_time,
-      credential,
-      auth_type,
-      success_count,
-      instruction_examples
-    `
-    )
+    .select(GET_TOOL_RETURN_FIELD)
     .order("created_at", { ascending: false });
   if (userId) {
     query = query.eq("user_id", userId);
@@ -122,23 +108,41 @@ export const getToolByID = async ({
   const supabase = createClient();
   const query = supabase
     .from("tools")
-    .select(
-      `
-    id,
-    name,
-    description,
-    schema,
-    created_at,
-    user_id,
-    execution_count,
-    average_execution_time,
-    credential,
-    auth_type,
-    success_count,
-    instruction_examples
-  `
-    )
+    .select(GET_TOOL_RETURN_FIELD)
     .eq("id", toolID)
+    .single();
+  const { data, error } = await query;
+
+  if (error) {
+    // 行が見つかりません / UUIDが不正
+    if (error.code === "PGRST116" || error.code === "22P02") {
+      return null;
+    } else {
+      throw error;
+    }
+  }
+
+  return data || null;
+};
+
+// ==============
+// 名前によるツール取得
+// ==============
+export interface GetToolByNameOptions {
+  toolName: string;
+}
+export const getToolByName = async ({
+  toolName,
+}: GetToolByNameOptions): Promise<Tool | null> => {
+  if (!toolName) {
+    throw new Error("Tool Name not specified");
+  }
+
+  const supabase = createClient();
+  const query = supabase
+    .from("tools")
+    .select(GET_TOOL_RETURN_FIELD)
+    .eq("name", toolName)
     .single();
   const { data, error } = await query;
 
