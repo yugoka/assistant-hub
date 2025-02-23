@@ -24,6 +24,14 @@ interface UseWebRTCAudioSessionOptions {
   tools?: OpenAIToolWithoutExecutor[]; // AI が呼び出せる function の一覧
   initialSystemMessage?: string; // セッション開始時に送る初期メッセージ
   model?: "tts-1" | "tts-1-hd";
+  turn_detection?: {
+    type?: string;
+    threshold?: number;
+    prefix_padding_ms?: number;
+    silence_duration_ms?: number;
+    create_response?: boolean;
+    interrupt_response?: boolean;
+  };
 }
 
 interface UseWebRTCAudioSessionReturn {

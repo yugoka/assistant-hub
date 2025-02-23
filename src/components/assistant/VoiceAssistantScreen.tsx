@@ -6,6 +6,7 @@ import useWebRTCAudioSession from "@/hooks/useRealtimeChat";
 import { useThread } from "../chat/thread/ThreadProvider";
 import VoiceAssitantAnimation from "./VoiceAssitantAnimation";
 import { parseMessageContent } from "@/utils/message";
+import { fillDateInSystemPrompt } from "@/prompts/systemPrompt";
 
 export default function VoiceAssistantScreen() {
   const { thread, threadId } = useThread();
@@ -42,9 +43,14 @@ export default function VoiceAssistantScreen() {
   } = useWebRTCAudioSession(threadId || "", {
     voice: "shimmer",
     tools,
+    turn_detection: {
+      threshold: 0.7,
+    },
     model: "tts-1",
     initialSystemMessage:
-      `${thread?.system_prompt}${thread?.memory}` ||
+      `${fillDateInSystemPrompt(thread?.system_prompt || "")}${
+        thread?.memory
+      }` ||
       "Start conversation with the user by saying 'Hello, how can I help you today?' Use the available tools when relevant. After executing a tool, you will need to respond (create a subsequent conversation item) to the user sharing the function result or error. If you do not respond with additional message with function result, user will not know you successfully executed the tool. Important: Speak and respond in the language of the user. Translate any texts to user's language if you need.",
   });
 
