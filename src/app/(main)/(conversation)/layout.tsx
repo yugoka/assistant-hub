@@ -11,9 +11,9 @@ export default function ConversationLayout({
 }) {
   const searchParams = useSearchParams();
 
-  const threadID = searchParams.get("thread_id");
+  const threadId = searchParams.get("thread_id");
   return (
-    <ThreadProviderWrapper threadId={threadID}>
+    <ThreadProviderWrapper threadId={threadId}>
       <ThreadEditorProviderWrapper>{children}</ThreadEditorProviderWrapper>
     </ThreadProviderWrapper>
   );

@@ -71,12 +71,12 @@ export const getThreads = async ({
 // IDによるスレッド取得
 // ==============
 export interface GetThreadByIDOptions {
-  threadID: string;
+  threadId: string;
 }
 export const getThreadByID = async ({
-  threadID,
+  threadId,
 }: GetThreadByIDOptions): Promise<Thread | null> => {
-  if (!threadID) {
+  if (!threadId) {
     throw new Error("Thread ID not specified");
   }
 
@@ -85,7 +85,7 @@ export const getThreadByID = async ({
   const query = supabase
     .from("threads")
     .select("*")
-    .eq("id", threadID)
+    .eq("id", threadId)
     .single();
   const { data, error } = await query;
 

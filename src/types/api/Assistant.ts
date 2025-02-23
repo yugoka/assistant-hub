@@ -1,7 +1,7 @@
 import { Message } from "../Message";
 
 export type AssistantAPIParam = {
-  threadID: string;
+  threadId: string;
   // messagesかcontentのどちらかは必須。messagesが優先される
   messages?: Message[];
   content?: string;

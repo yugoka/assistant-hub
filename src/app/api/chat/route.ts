@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const reqBody = await req.json();
     const params: AssistantAPIParam = {
-      threadID: reqBody.threadID,
+      threadId: reqBody.threadId,
       messages: reqBody.messages,
       content: reqBody.content,
       save: reqBody.save,
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       stream: reqBody.stream ?? true, // streamが指定されていない場合はtrue
     };
 
-    if (!params.threadID) {
+    if (!params.threadId) {
       throw new Error("Thread ID not specified");
     }
 

@@ -39,12 +39,12 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
 
-    const threadID = url.searchParams.get("thread_id");
+    const threadId = url.searchParams.get("thread_id");
     const userID = url.searchParams.get("user_id");
 
-    if (threadID) {
+    if (threadId) {
       const result = await getThreadByID({
-        threadID,
+        threadId,
       });
 
       const res = NextResponse.json(result, { status: 200 });

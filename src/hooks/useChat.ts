@@ -110,7 +110,7 @@ export const useChat = ({ api, threadId }: UseChatProps) => {
   const sendMessageToAPI = async (newMessages: Message[], threadId: string) => {
     try {
       const messagesStream = await getMessagesStream(
-        { messages: newMessages, threadID: threadId, save: true },
+        { messages: newMessages, threadId: threadId, save: true },
         api
       );
 

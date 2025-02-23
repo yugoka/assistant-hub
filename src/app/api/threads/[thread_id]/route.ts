@@ -15,9 +15,9 @@ export async function GET(
   { params }: { params: { thread_id: string } }
 ) {
   try {
-    const threadID = params.thread_id;
+    const threadId = params.thread_id;
 
-    if (!threadID) {
+    if (!threadId) {
       return new Response(
         JSON.stringify({ error: "Bad Request: thread_id is required" }),
         {
@@ -30,7 +30,7 @@ export async function GET(
     }
 
     const result = await getThreadByID({
-      threadID,
+      threadId,
     });
 
     if (result === null) {

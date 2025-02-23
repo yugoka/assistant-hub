@@ -37,16 +37,16 @@ export const createMessage = async (newMessage: Message): Promise<Message> => {
 // スレッドIDによるメッセージ取得
 // ==============
 interface GetMessagesByThreadIdOptions {
-  threadID: string;
+  threadId: string;
   page?: number;
   pageSize?: number;
 }
 export const getMessagesByThreadID = async ({
-  threadID,
+  threadId,
   page,
   pageSize = 10,
 }: GetMessagesByThreadIdOptions): Promise<Message[]> => {
-  if (!threadID) {
+  if (!threadId) {
     throw new Error("Thread ID not specified");
   }
   const supabase = createClient();
@@ -54,7 +54,7 @@ export const getMessagesByThreadID = async ({
   let query = supabase
     .from("messages")
     .select("*")
-    .eq("thread_id", threadID)
+    .eq("thread_id", threadId)
     .order("created_at");
   if (page !== undefined) {
     query = query.range((page - 1) * pageSize, page * pageSize - 1);

@@ -40,16 +40,16 @@ export async function GET(req: Request) {
     // リクエストURLからクエリパラメーターを取得
     const url = new URL(req.url);
 
-    const threadID = url.searchParams.get("thread_id");
+    const threadId = url.searchParams.get("thread_id");
     const pageParam = parseInt(url.searchParams.get("page") || "");
     const page = isNaN(pageParam) ? undefined : pageParam;
     const pageSizeParam = parseInt(url.searchParams.get("page_size") || "");
     const pageSize = isNaN(pageSizeParam) ? undefined : pageSizeParam;
 
-    if (threadID) {
+    if (threadId) {
       // thread_idが存在する場合のレスポンス
       const responseData: Message[] = await getMessagesByThreadID({
-        threadID,
+        threadId,
         page,
         pageSize,
       });

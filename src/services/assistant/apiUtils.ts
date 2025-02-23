@@ -11,13 +11,13 @@ export const getMessagesFromAssistantAPIParams = async (
   } else {
     if (params.content) {
       const messageLogs = await getMessagesByThreadID({
-        threadID: params.threadID,
+        threadId: params.threadId,
       });
       const userMessage: Message = {
         id: uuidv4(),
         role: "user",
         content: params.content,
-        thread_id: params.threadID,
+        thread_id: params.threadId,
       };
 
       return [...messageLogs, userMessage];

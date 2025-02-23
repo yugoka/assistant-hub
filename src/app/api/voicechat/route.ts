@@ -11,7 +11,7 @@ export const runtime = "edge";
 
 export async function POST(req: Request) {
   const params: AssistantAPIParam = await req.json();
-  if (!params.threadID) {
+  if (!params.threadId) {
     throw new Error("Thread ID not specified");
   }
 

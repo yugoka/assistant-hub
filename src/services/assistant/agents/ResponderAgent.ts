@@ -32,7 +32,7 @@ type ToolExecutionResult = {
 
 export default class ResponderAgent {
   private readonly openai: OpenAI;
-  private readonly threadID: string;
+  private readonly threadId: string;
   private readonly maxToolCallSteps: number;
   private readonly save: boolean;
   private readonly model?: string;
@@ -44,14 +44,14 @@ export default class ResponderAgent {
   public steps: number;
 
   constructor({
-    threadID,
+    threadId,
     messages,
     maxSteps = MAX_STEPS,
     save = true,
     model,
   }: ResponderAgentParam) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    this.threadID = threadID;
+    this.threadId = threadId;
     this.inputMessages = messages;
     this.currentMessages = [];
     this.maxToolCallSteps = maxSteps;
@@ -133,7 +133,7 @@ export default class ResponderAgent {
   private async loadThread() {
     const startTime = performance.now();
     console.log("Loading thread...");
-    const result = await getThreadByID({ threadID: this.threadID });
+    const result = await getThreadByID({ threadId: this.threadId });
     this.thread = result;
     console.log(
       `[Performance] loadThread took ${(performance.now() - startTime).toFixed(
@@ -261,7 +261,7 @@ export default class ResponderAgent {
     const newMessage = {
       ...newChunkObject.choices[0].delta,
       id: currentMessageUUID,
-      thread_id: this.threadID,
+      thread_id: this.threadId,
     } as Message;
     return { newMessage, newChunkObject };
   }
@@ -359,7 +359,7 @@ export default class ResponderAgent {
         role: "tool",
         tool_call_id: toolCall.id || "",
         content: "",
-        thread_id: this.threadID,
+        thread_id: this.threadId,
       };
       if (!calledTool) {
         toolCallResult.content = "Failed to execute function";
@@ -393,7 +393,7 @@ export default class ResponderAgent {
         const newMessage: Message = {
           ...message,
           // パラメータが足りなければ追加
-          thread_id: message.thread_id || this.threadID,
+          thread_id: message.thread_id || this.threadId,
           id: message.id || uuidv4(),
         };
 
