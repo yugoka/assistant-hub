@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import useWebRTCAudioSession from "@/hooks/useRealtimeChat";
-import { Mic, MicOff, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useThread } from "../chat/thread/ThreadProvider";
+import VoiceAssitantAnimation from "./VoiceAssitantAnimation";
+import { parseMessageContent } from "@/utils/message";
 
 export default function VoiceAssistantScreen() {
   const { thread, threadId } = useThread();
@@ -36,8 +35,8 @@ export default function VoiceAssistantScreen() {
     status: realtimeStatus,
     isSessionActive,
     handleStartStopClick,
-    // 音声会話の会話ログ（必要に応じて利用可能）
-    // conversation: realtimeConversation,
+    conversation: realtimeConversation,
+    currentVolume,
   } = useWebRTCAudioSession(threadId || "", {
     voice: "shimmer",
     tools,
@@ -55,34 +54,28 @@ export default function VoiceAssistantScreen() {
   };
 
   return (
-    <div className="flex h-full flex-col w-full">
+    <div className="flex h-full flex-col justify-center w-full">
       {/* メインコンテンツエリア */}
-      <div className="flex-1 flex flex-col justify-center">
-        <div>
-          <div className="text-center">
-            {isSessionActive ? (
-              <p>音声通話中...</p>
-            ) : (
-              <p>音声通話を開始するには下のボタンをクリックしてください。</p>
+      {/* アニメーションコンポーネントにチャット状態と currentVolume を渡す */}
+      <div>
+        <div className="flex justify-center">
+          <button
+            className="flex flex-col justify-center w-28 h-28 rounded-full"
+            onClick={toggleAudioSession}
+            disabled={isSessionInProgress && !isSessionActive}
+          >
+            <VoiceAssitantAnimation
+              isChatActive={isSessionInProgress}
+              currentVolume={currentVolume}
+            />
+          </button>
+        </div>
+        <div className="text-center mt-2 h-10">
+          <p>
+            {parseMessageContent(
+              realtimeConversation[realtimeConversation.length - 1]?.content
             )}
-          </div>
-          <div className="flex-1 flex justify-center mt-5">
-            <Button
-              onClick={toggleAudioSession}
-              disabled={isSessionInProgress && !isSessionActive}
-              variant="outline"
-              className="rounded-full w-11 h-11 p-0 flex items-center justify-center"
-              type="button"
-            >
-              {isSessionActive ? (
-                <MicOff size={22} className="text-red-500" />
-              ) : isSessionInProgress ? (
-                <Loader2 size={22} className="animate-spin" />
-              ) : (
-                <Mic size={22} />
-              )}
-            </Button>
-          </div>
+          </p>
         </div>
       </div>
     </div>
