@@ -74,39 +74,13 @@ export default function VoiceAssistantScreen() {
               className="rounded-full w-11 h-11 p-0 flex items-center justify-center"
               type="button"
             >
-              <AnimatePresence mode="wait">
-                {isSessionActive ? (
-                  <motion.div
-                    key="micOff"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.1 }}
-                  >
-                    <MicOff size={22} className="text-red-500" />
-                  </motion.div>
-                ) : isSessionInProgress ? (
-                  <motion.div
-                    key="loader"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.1 }}
-                  >
-                    <Loader2 size={22} className="animate-spin" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="mic"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    transition={{ duration: 0.1 }}
-                  >
-                    <Mic size={22} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {isSessionActive ? (
+                <MicOff size={22} className="text-red-500" />
+              ) : isSessionInProgress ? (
+                <Loader2 size={22} className="animate-spin" />
+              ) : (
+                <Mic size={22} />
+              )}
             </Button>
           </div>
         </div>
