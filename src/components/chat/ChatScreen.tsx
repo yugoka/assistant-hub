@@ -17,11 +17,9 @@ import type { OpenAIToolWithoutExecutor } from "@/services/schema/openapiToTools
 import { ArrowUpIcon, Loader2, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Props = {
-  threadID: string | null | undefined;
-};
+export default function ChatScreen() {
+  const { thread, threadId } = useThread();
 
-export default function ChatScreen({ threadID }: Props) {
   const supabase = createClient();
   const {
     messages,
@@ -34,10 +32,9 @@ export default function ChatScreen({ threadID }: Props) {
     isStreaming,
   } = useChat({
     api: "/api/chat/",
-    threadID,
+    threadId,
   });
 
-  const { thread } = useThread();
   const [isAtBottom, setIsAtBottom] = useState(true);
   const scrollContainer = useRef<HTMLDivElement>(null);
   const [tools, setTools] = useState<OpenAIToolWithoutExecutor[]>([]);
@@ -50,7 +47,7 @@ export default function ChatScreen({ threadID }: Props) {
     currentVolume,
     conversation: realtimeConversation,
     sendTextMessage: sendRealtimeTextMessage,
-  } = useWebRTCAudioSession(threadID || "", {
+  } = useWebRTCAudioSession(threadId || "", {
     voice: "shimmer",
     tools,
     model: "tts-1", //tts-1-hdが不安定なため
@@ -98,14 +95,14 @@ export default function ChatScreen({ threadID }: Props) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`chat-messages-${threadID || "new"}`)
+      .channel(`chat-messages-${threadId || "new"}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "messages",
-          filter: `thread_id=eq.${threadID}`,
+          filter: `thread_id=eq.${threadId}`,
         },
         (payload) => {
           handleNewMessage(payload.new as Message);
@@ -116,7 +113,7 @@ export default function ChatScreen({ threadID }: Props) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [threadID, handleNewMessage]); // Added handleNewMessage to dependencies
+  }, [threadId, handleNewMessage]); // Added handleNewMessage to dependencies
 
   useEffect(() => {
     realtimeConversation.forEach((msg) => {

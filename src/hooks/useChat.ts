@@ -10,10 +10,10 @@ import { v4 as uuidv4 } from "uuid";
 
 interface UseChatProps {
   api: string;
-  threadID: string | null | undefined;
+  threadId: string | null | undefined;
 }
 
-export const useChat = ({ api, threadID }: UseChatProps) => {
+export const useChat = ({ api, threadId }: UseChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -30,14 +30,14 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
   useEffect(() => {
     (async () => {
       if (isNewThread) {
-        router.replace(`/chat?thread_id=${threadID}`);
+        router.replace(`/chat?thread_id=${threadId}`);
       } else {
         setIsError(false);
 
-        if (threadID) {
+        if (threadId) {
           try {
             setIsLoading(true);
-            const messages = await getMessages(threadID);
+            const messages = await getMessages(threadId);
             setMessages(messages);
           } catch (error) {
             console.error(error);
@@ -50,11 +50,11 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
         }
       }
     })();
-  }, [threadID]);
+  }, [threadId]);
 
   const refetch = async () => {
-    if (threadID) {
-      const messages = await getMessages(threadID);
+    if (threadId) {
+      const messages = await getMessages(threadId);
       setMessages(messages);
     }
   };
@@ -93,24 +93,24 @@ export const useChat = ({ api, threadID }: UseChatProps) => {
     firstMessageContent: string,
     userID: string
   ): Promise<string> => {
-    if (threadID) return threadID;
+    if (threadId) return threadId;
 
     const thread = await createThread(firstMessageContent, userID);
     router.replace(`/chat?thread_id=${thread.id}&new=true`);
     return thread.id;
   };
 
-  const createUserMessage = (content: string, threadID: string): Message => ({
+  const createUserMessage = (content: string, threadId: string): Message => ({
     id: uuidv4(),
     role: "user",
     content,
-    thread_id: threadID,
+    thread_id: threadId,
   });
 
-  const sendMessageToAPI = async (newMessages: Message[], threadID: string) => {
+  const sendMessageToAPI = async (newMessages: Message[], threadId: string) => {
     try {
       const messagesStream = await getMessagesStream(
-        { messages: newMessages, threadID, save: true },
+        { messages: newMessages, threadID: threadId, save: true },
         api
       );
 
@@ -204,12 +204,12 @@ const getMessagesStream = async (
 
 // メッセージを取得する
 const getMessages = async (
-  threadID: string,
+  threadId: string,
   page?: number,
   pageSize?: number
 ): Promise<Message[]> => {
   const params = new URLSearchParams();
-  params.append("thread_id", threadID);
+  params.append("thread_id", threadId);
   if (page !== undefined) {
     params.append("page", `${page}`);
   }

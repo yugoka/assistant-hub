@@ -4,7 +4,9 @@ import { createContext, useContext, ReactNode, useState } from "react";
 import { RefetchOptions, useQuery } from "react-query";
 
 interface ThreadContextType {
+  // スレッドはfetchしないと配られないが、threadIdは読み込みの瞬間から存在する
   thread: Thread | undefined;
+  threadId: string | null;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -37,6 +39,7 @@ export default function ThreadProviderWrapper({
     <ThreadContext.Provider
       value={{
         thread: data,
+        threadId: threadId,
         error,
         isError: !!error,
         isLoading,
