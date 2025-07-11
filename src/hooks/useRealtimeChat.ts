@@ -463,7 +463,7 @@ export default function useWebRTCAudioSession(
 
       // OpenAI Realtime API への接続
       const baseUrl = "https://api.openai.com/v1/realtime";
-      const modelName = "gpt-4o-realtime-preview"; // Realtime対応モデル
+      const modelName = "gpt-4o-realtime-preview-2025-06-03"; // Realtime対応モデル
       const response = await fetch(
         `${baseUrl}?model=${modelName}&voice=${voice}`,
         {
