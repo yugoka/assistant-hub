@@ -53,7 +53,7 @@ export default function ChatScreen({ threadID }: Props) {
   } = useWebRTCAudioSession(threadID || "", {
     voice: "shimmer",
     tools,
-    model: "tts-1", //tts-1-hdが不安定なため
+    model: "tts-1-hd",
     initialSystemMessage:
       `${thread?.system_prompt}${thread?.memory}` ||
       "Start conversation with the user by saying 'Hello, how can I help you today?' Use the available tools when relevant. After executing a tool, you will need to respond (create a subsequent conversation item) to the user sharing the function result or error. If you do not respond with additional message with function result, user will not know you successfully executed the tool. Important: Speak and respond in the language of the user. Translate any texts to user's language if you need.",

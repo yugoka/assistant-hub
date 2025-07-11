@@ -45,7 +45,7 @@ export default function useWebRTCAudioSession(
   options?: UseWebRTCAudioSessionOptions
 ): UseWebRTCAudioSessionReturn {
   const voice = options?.voice ?? "sage";
-  const model = options?.model ?? "tts-1";
+  const model = options?.model ?? "tts-1-hd";
   const tools = options?.tools ?? [];
   const initialSystemMessage = options?.initialSystemMessage ?? "";
 
